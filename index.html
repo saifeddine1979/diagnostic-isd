@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diagnostic Clarté Rentable™ — ISD</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080810;color:#F5F0E8;font-family:'DM Sans',sans-serif;min-height:100vh}
+:root{--gold:#C9A84C;--dark:#080810;--dark2:#0F0F1A;--border:#2A2A3A;--text:#F5F0E8;--muted:#8A8A9A;--red:#C0392B;--green:#27AE60;--orange:#E67E22}
+input,textarea,select{background:var(--dark2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;width:100%;outline:none;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+input.error{border-color:var(--red)!important}
+select option{background:var(--dark2)}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border:none;border-radius:6px;transition:all .2s}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+h1,h2,h3{font-family:'DM Serif Display',serif}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--dark2)}::-webkit-scrollbar-thumb{background:#C9A84C44;border-radius:4px}
+.gold-btn{background:var(--gold);color:var(--dark);padding:12px 24px;font-size:14px;font-weight:600;border-radius:6px;border:none}
+.gold-btn:hover{opacity:.9;transform:translateY(-1px)}
+.gold-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ghost-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:10px 20px;font-size:13px;border-radius:6px}
+.ghost-btn:hover{border-color:var(--gold);color:var(--gold)}
+.card{background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:24px}
+.field-error{color:var(--red);font-size:11px;margin-top:4px}
+.field-wrap{margin-bottom:18px}
+.radio-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.radio-opt{padding:8px 16px;border:1px solid var(--border);border-radius:20px;font-size:13px;cursor:pointer;color:var(--muted);background:transparent;transition:all .2s}
+.radio-opt.active{border-color:var(--gold);color:var(--gold);background:#C9A84C11}
+.radio-opt.err{border-color:var(--red)}
+.score-bar-bg{background:var(--border);border-radius:4px;height:8px;overflow:hidden;margin-top:4px}
+.score-bar-fill{height:100%;border-radius:4px;transition:width .8s ease}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+.saving-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite}
+.page{animation:fadeInUp .3s ease}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+@media(max-width:640px){.grid2,.grid3{grid-template-columns:1fr!important}}
+#topbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+#progressbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:16px}
+#content{max-width:680px;margin:0 auto;padding:28px 20px 100px}
+.nav-btns{display:flex;justify-content:space-between;margin-top:28px;padding-top:20px;border-top:1px solid var(--border)}
+.meter-wrap{display:flex;align-items:center;gap:12px;padding:10px 16px;border-radius:8px;margin-bottom:20px}
+.modal-overlay{position:fixed;inset:0;background:#000d;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:var(--dark2);border:1px solid var(--border);border-radius:14px;width:100%;max-width:480px;overflow:hidden;box-shadow:0 20px 60px #000c;animation:fadeInUp .3s ease}
+.modal-box.wide{max-width:540px}
+.admin-overlay{position:fixed;inset:0;background:#000d;z-index:200;display:flex;align-items:center;justify-content:center}
+.admin-box{background:var(--dark2);border:1px solid var(--border);border-radius:14px;width:92vw;max-width:980px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column}
+.admin-layout{display:flex;flex:1;overflow:hidden}
+.admin-sidebar{width:270px;border-right:1px solid var(--border);display:flex;flex-direction:column}
+.admin-detail{flex:1;overflow-y:auto;padding:20px}
+@media(max-width:640px){.admin-layout{flex-direction:column}.admin-sidebar{width:100%;border-right:none;border-bottom:1px solid var(--border);max-height:200px}}
+#ai-btn{position:fixed;bottom:24px;right:24px;width:52px;height:52px;border-radius:50%;background:var(--gold);color:var(--dark);font-size:20px;font-weight:700;border:none;cursor:pointer;z-index:100;box-shadow:0 4px 20px #C9A84C44}
+#ai-panel{position:fixed;bottom:24px;right:24px;width:340px;height:460px;background:var(--dark2);border:1px solid var(--border);border-radius:12px;display:flex;flex-direction:column;z-index:100;box-shadow:0 8px 40px #000c}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span style="color:var(--gold);font-weight:700;font-family:'DM Serif Display',serif;font-size:17px">⬡ Clarté Rentable™</span>
+  <div style="display:flex;align-items:center;gap:8px">
+    <input id="admin-input" type="password" placeholder="•••" style="width:60px;padding:4px 8px;font-size:12px"/>
+    <button onclick="openAdmin()" style="background:var(--dark);border:1px solid var(--border);color:var(--muted);padding:4px 10px;font-size:11px;border-radius:4px">ADMIN</button>
+    <span id="admin-err" style="font-size:10px;color:var(--red)"></span>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progressbar" class="hidden">
+  <span id="save-status" style="font-size:11px;color:var(--muted);min-width:90px">✓ Sauvegardé</span>
+  <div style="flex:1;background:var(--border);border-radius:4px;height:4px;overflow:hidden">
+    <div id="progress-fill" style="height:100%;background:var(--gold);border-radius:4px;transition:width .5s;width:0%"></div>
+  </div>
+  <span id="progress-pct" style="font-size:12px;color:var(--gold);font-weight:700;min-width:36px">0%</span>
+  <span id="progress-label" style="font-size:11px;color:var(--muted)"></span>
+</div>
+
+<!-- ERROR BANNER -->
+<div id="error-banner" class="hidden" style="background:#C0392B18;border:1px solid #C0392B44;border-bottom:none;padding:10px 24px;text-align:center">
+  <span style="color:var(--red);font-size:13px">⚠ Veuillez compléter les champs obligatoires marqués d'un <span style="color:var(--gold)">*</span> avant de continuer.</span>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="content"></div>
+
+<!-- AI BUTTON -->
+<button id="ai-btn" class="hidden" onclick="toggleAI()" title="Assistant IA">✦</button>
+<div id="ai-panel" class="hidden"></div>
+
+<!-- MODALS -->
+<div id="micro-modal" class="modal-overlay hidden"></div>
+<div id="email-modal" class="modal-overlay hidden"></div>
+<div id="admin-panel" class="admin-overlay hidden"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL = "https://jkpbhxssymkkfxpgvnub.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xuSwvSsFcmuA7jKMK2KsZw_2eJjSaEz";
+const API_ENDPOINT = "/.netlify/functions/claude"; // Proxy Netlify — clé sécurisée côté serveur
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+const STEPS = ["welcome","s0","s1","s3","s4","s5","s6","s7","s8","objectif","result"];
+const STEP_LABELS = {welcome:"Bienvenue",s0:"Profil",s1:"Période",s3:"Acquisition",s4:"Conversion",s5:"Monétisation",s6:"Capacité",s7:"Trésorerie",s8:"Marché",objectif:"Objectifs",result:"Résultats"};
+const PILIER_LABELS = {leads:"Acquisition",conversion:"Conversion",marge:"Monétisation",capacite:"Capacité",tresorerie:"Trésorerie",marche:"Marché"};
+const SECTION_TO_PILIER = {s3:"leads",s4:"conversion",s5:"marge",s6:"capacite",s7:"tresorerie",s8:"marche"};
+
+let STATE = {
+  step: "welcome",
+  sessionId: null,
+  data: {},
+  isd: null,
+  saveTimer: null,
+  aiOpen: false,
+  aiMsgs: [],
+  fieldErrors: {}
+};
+
+// ═══════════════════════════════════════════════════
+// SUPABASE HELPERS
+// ═══════════════════════════════════════════════════
+async function sbFetch(path, opts={}) {
+  const res = await fetch(SUPABASE_URL + path, {
+    ...opts,
+    headers: {
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + SUPABASE_KEY,
+      "Content-Type": "application/json",
+      "Prefer": opts.prefer || "",
+      ...(opts.headers||{})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("Supabase error:", err);
+    return null;
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+async function saveToSupabase() {
+  if (!STATE.sessionId) return;
+  const prenom = (STATE.data.s0||{}).prenom || "";
+  const nom = (STATE.data.s0||{}).nom || "";
+  const email = (STATE.data.s0||{}).email || "";
+  const entreprise = (STATE.data.s0||{}).entreprise || "";
+  const isd = STATE.isd || computeISD(STATE.data);
+
+  const payload = {
+    id: STATE.sessionId,
+    prenom, nom, email, entreprise,
+    step_actuel: STATE.step,
+    data_json: STATE.data,
+    score_global: isd.global || null,
+    stoppeur: isd.stoppeur || null,
+    scores_json: isd.scores || null,
+    updated_at: new Date().toISOString()
+  };
+
+  await sbFetch("/rest/v1/diagnostics", {
+    method: "POST",
+    prefer: "resolution=merge-duplicates",
+    headers: { "Prefer": "resolution=merge-duplicates" },
+    body: JSON.stringify(payload)
+  });
+}
+
+async function loadFromSupabase(sessionId) {
+  const data = await sbFetch(`/rest/v1/diagnostics?id=eq.${sessionId}&select=*`);
+  return data && data[0] ? data[0] : null;
+}
+
+async function loadAllDossiers() {
+  const data = await sbFetch("/rest/v1/diagnostics?select=*&order=created_at.desc");
+  return data || [];
+}
+
+async function updateAdminField(sessionId, fields) {
+  await sbFetch(`/rest/v1/diagnostics?id=eq.${sessionId}`, {
+    method: "PATCH",
+    body: JSON.stringify(fields)
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// LOCAL STORAGE (backup léger)
+// ═══════════════════════════════════════════════════
+function stor(key, val) {
+  if (val === undefined) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : null; } catch { return null; }
+  } else {
+    try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════════════
+function computeISD(d) {
+  const s3=d.s3||{},s4=d.s4||{},s5=d.s5||{},s6=d.s6||{},s7=d.s7||{},s8=d.s8||{};
+  const leads = Math.min(Math.min((parseFloat(s3.prospects_mois)||0)/10*4,4)+Math.min((parseFloat(s3.taux_rdv)||0)/100*3,3)+(s3.autonomie==="oui"?3:0),10);
+  const conversion = Math.min(Math.min((parseFloat(s4.taux_conversion)||0)/100*25,6)+(s4.promesse_mesurable==="oui"?1.5:0)+(s4.preuves==="oui"?1.5:0)+(s4.garantie==="forte"?2:s4.garantie==="partielle"?1:0),10);
+  const marge = Math.min(Math.min((parseFloat(s5.marge_brute)||0)/100*6,6)+Math.min((parseFloat(s5.pct_upsell)||0)/100*2,2)+(s5.offre_recurrente==="oui"?2:0),10);
+  const capacite = Math.min(Math.min((parseFloat(s6.heures_vente)||0)/10*2,2)+Math.min((parseFloat(s6.heures_delivery)||0)/20*3,3)+Math.min((parseFloat(s6.clients_simultanes)||0)/5*3,3)+(s6.casse_premier==="non"?2:1),10);
+  const enc=parseFloat(s7.encaisse)||0,chg=parseFloat(s7.charges)||1;
+  const tresorerie = Math.min(Math.min((enc/chg)*3,4)+Math.min((parseFloat(s7.runway_mois)||0)*0.6,4)+((10-(parseFloat(s7.stress)||5))*0.2),10);
+  const marche = Math.min((parseFloat(s8.score_diff)||5)/10*8+((s8.concurrents||[]).filter(c=>c&&c.nom).length>0?2:0),10);
+  const scores={leads,conversion,marge,capacite,tresorerie,marche};
+  const global=Object.values(scores).reduce((a,b)=>a+b,0)/6;
+  const stoppeur=Object.entries(scores).sort((a,b)=>a[1]-b[1])[0][0];
+  return {scores,global:Math.round(global*10)/10,stoppeur};
+}
+
+function partialScore(section) {
+  const d = STATE.data[section]||{};
+  switch(section) {
+    case "s3": return Math.min(Math.min((parseFloat(d.prospects_mois)||0)/10*4,4)+Math.min((parseFloat(d.taux_rdv)||0)/100*3,3)+(d.autonomie==="oui"?3:0),10);
+    case "s4": return Math.min(Math.min((parseFloat(d.taux_conversion)||0)/100*25,6)+(d.promesse_mesurable==="oui"?1.5:0)+(d.preuves==="oui"?1.5:0)+(d.garantie==="forte"?2:d.garantie==="partielle"?1:0),10);
+    case "s5": return Math.min(Math.min((parseFloat(d.marge_brute)||0)/100*6,6)+Math.min((parseFloat(d.pct_upsell)||0)/100*2,2)+(d.offre_recurrente==="oui"?2:0),10);
+    case "s6": return Math.min(Math.min((parseFloat(d.heures_vente)||0)/10*2,2)+Math.min((parseFloat(d.heures_delivery)||0)/20*3,3)+Math.min((parseFloat(d.clients_simultanes)||0)/5*3,3)+(d.casse_premier==="non"?2:1),10);
+    case "s7": { const e=parseFloat(d.encaisse)||0,c=parseFloat(d.charges)||1; return Math.min(Math.min((e/c)*3,4)+Math.min((parseFloat(d.runway_mois)||0)*0.6,4)+((10-(parseFloat(d.stress)||5))*0.2),10); }
+    case "s8": return Math.min((parseFloat(d.score_diff)||5)/10*8+((d.concurrents||[]).filter(c=>c&&c.nom).length>0?2:0),10);
+    default: return null;
+  }
+}
+
+function scoreColor(s) { return s<4?"var(--red)":s<7?"var(--orange)":"var(--green)"; }
+function scoreLabel(s) { return s<4?"Critique":s<7?"À améliorer":"Bon"; }
+
+// ═══════════════════════════════════════════════════
+// VALIDATION
+// ═══════════════════════════════════════════════════
+const REQUIRED = {
+  s0: [{k:"prenom",l:"Prénom"},{k:"email",l:"Email"},{k:"entreprise",l:"Entreprise"},{k:"secteur",l:"Secteur"}],
+  s1: [{k:"revenus_mois",l:"Revenus mensuels"}],
+  s3: [{k:"prospects_mois",l:"Prospects/mois"},{k:"autonomie",l:"Autonomie"}],
+  s4: [{k:"taux_conversion",l:"Taux de conversion"},{k:"garantie",l:"Garantie"}],
+  s5: [{k:"marge_brute",l:"Marge brute"}],
+  s6: [{k:"heures_vente",l:"Heures vente"},{k:"clients_simultanes",l:"Clients simultanés"}],
+  s7: [{k:"encaisse",l:"Montant encaissé"},{k:"charges",l:"Charges fixes"}],
+  s8: [{k:"score_diff",l:"Score différenciation"}],
+  objectif: [{k:"objectif_revenu",l:"Objectif revenu"},{k:"delai",l:"Délai"}]
+};
+
+function validate(step) {
+  const fields = REQUIRED[step]||[];
+  const d = STATE.data[step]||{};
+  const errs = {};
+  fields.forEach(({k,l}) => {
+    if (!d[k]||String(d[k]).trim()==="") errs[k]=`${l} est requis`;
+    if (k==="email" && d[k] && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d[k])) errs[k]="Email invalide";
+  });
+  return errs;
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function goTo(step) {
+  STATE.step = step;
+  STATE.fieldErrors = {};
+  stor("session_step", step);
+  updateProgress();
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+async function goNext() {
+  const idx = STEPS.indexOf(STATE.step);
+  if (idx >= STEPS.length-1) return;
+
+  const errs = validate(STATE.step);
+  if (Object.keys(errs).length > 0) {
+    STATE.fieldErrors = errs;
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+    return;
+  }
+  STATE.fieldErrors = {};
+
+  // Créer sessionId au premier pas après welcome
+  if (STATE.step === "welcome" && !STATE.sessionId) {
+    STATE.sessionId = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2,8);
+    stor("session_id", STATE.sessionId);
+  }
+
+  const nextStep = STEPS[idx+1];
+  const pilier = SECTION_TO_PILIER[STATE.step];
+
+  // Autosave à Supabase à chaque section
+  if (STATE.sessionId && STATE.step !== "welcome") {
+    autoSave();
+  }
+
+  // Micro-sondage pour les sections piliers
+  if (pilier) {
+    showMicroSondage(pilier, partialScore(STATE.step), nextStep);
+    return;
+  }
+
+  // Avant résultat : calculer ISD + sauvegarder + email modal
+  if (nextStep === "result") {
+    const isd = computeISD(STATE.data);
+    STATE.isd = isd;
+    await saveToSupabase();
+    showEmailModal();
+    return;
+  }
+
+  goTo(nextStep);
+}
+
+function goBack() {
+  const idx = STEPS.indexOf(STATE.step);
+  if (idx > 1) goTo(STEPS[idx-1]);
+}
+
+// ═══════════════════════════════════════════════════
+// DATA UPDATE
+// ═══════════════════════════════════════════════════
+function updateData(section, key, value) {
+  if (!STATE.data[section]) STATE.data[section]={};
+  STATE.data[section][key] = value;
+  STATE.fieldErrors = {};
+  const pilier = SECTION_TO_PILIER[section];
+  if (pilier && section===STATE.step) updateMeter(section);
+  clearTimeout(STATE.saveTimer);
+  const ss = document.getElementById('save-status');
+  if(ss) ss.innerHTML = '<span class="saving-dot"></span> Sauvegarde…';
+  STATE.saveTimer = setTimeout(()=>{
+    stor("session_data", STATE.data);
+    if(ss) ss.textContent = '✓ Sauvegardé';
+  }, 1200);
+}
+
+function autoSave() {
+  clearTimeout(STATE.saveTimer);
+  STATE.saveTimer = setTimeout(async ()=>{
+    stor("session_data", STATE.data);
+    await saveToSupabase();
+    const ss = document.getElementById('save-status');
+    if(ss) ss.textContent = '✓ Sauvegardé';
+  }, 1500);
+}
+
+function updateMeter(section) {
+  const meterEl = document.getElementById('score-meter');
+  if (!meterEl) return;
+  const score = partialScore(section);
+  if (score===null) return;
+  const c = scoreColor(score);
+  const pct = Math.min(score*10,100);
+  const r=15.9, circ=2*Math.PI*r, dash=pct/100*circ;
+  meterEl.innerHTML = `
+    <div class="meter-wrap" style="background:${c}11;border:1px solid ${c}33">
+      <div style="position:relative;width:48px;height:48px;flex-shrink:0">
+        <svg viewBox="0 0 36 36" style="width:48px;height:48px;transform:rotate(-90deg)">
+          <circle cx="18" cy="18" r="${r}" fill="none" stroke="var(--border)" stroke-width="3"/>
+          <circle cx="18" cy="18" r="${r}" fill="none" stroke="${c}" stroke-width="3"
+            stroke-dasharray="${dash} ${circ-dash}" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:${c}">${score.toFixed(1)}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--muted)">Score ${PILIER_LABELS[SECTION_TO_PILIER[section]]}</div>
+        <div style="font-size:13px;font-weight:600;color:${c}">${scoreLabel(score)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Mis à jour en temps réel</div>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════════
+// PROGRESS
+// ═══════════════════════════════════════════════════
+function updateProgress() {
+  const pb = document.getElementById('progressbar');
+  const step = STATE.step;
+  if (step==="welcome") { pb.classList.add('hidden'); return; }
+  pb.classList.remove('hidden');
+  const idx = STEPS.indexOf(step);
+  const total = STEPS.length-2;
+  const pct = idx<=0?0:Math.round(((idx)/(total))*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-pct').textContent = pct+'%';
+  document.getElementById('progress-label').textContent = STEP_LABELS[step]||'';
+}
+
+// ═══════════════════════════════════════════════════
+// MICRO-SONDAGE
+// ═══════════════════════════════════════════════════
+const LECTURES = {
+  leads:{
+    critique:{emoji:"🔴",titre:"Acquisition — Zone critique",corps:"ce score confirme que le flux entrant est le frein principal. Votre machine ne manque pas de carburant par hasard — on va identifier exactement ce qui bloque l'entrée lors de notre session.",insight:"Le Stoppeur est probablement ici. On y consacrera le plus de temps."},
+    moyen:{emoji:"🟡",titre:"Acquisition — Flux instable",corps:"vous avez des prospects — mais de façon irrégulière. Le système fonctionne, mais il dépend encore trop de vous ou d'un seul canal. On verra comment le stabiliser.",insight:"Ce n'est pas votre stoppeur principal, mais une fragilité à corriger."},
+    bon:{emoji:"🟢",titre:"Acquisition — Flux solide",corps:"c'est une base saine. Votre moteur d'entrée fonctionne. On cherchera si le blocage se situe plus bas dans la séquence.",insight:"Force à préserver. Le levier est ailleurs."}
+  },
+  conversion:{
+    critique:{emoji:"🔴",titre:"Conversion — Perte majeure",corps:"des prospects entrent mais ne deviennent pas clients. C'est de l'argent qui s'échappe à chaque RDV. On disséquera ensemble la promesse, la preuve et la garantie.",insight:"Chaque point gagné ici se traduit directement en revenus."},
+    moyen:{emoji:"🟡",titre:"Conversion — À affiner",corps:"vous convertissez — mais pas assez régulièrement. Il y a souvent une objection récurrente non traitée ou une garantie trop faible. On l'identifiera ensemble.",insight:"Quelques ajustements précis peuvent doubler ce score."},
+    bon:{emoji:"🟢",titre:"Conversion — Efficace",corps:"bonne maîtrise de votre vente. C'est un actif. On vérifiera que ce n'est pas obtenu au prix d'un effort personnel trop intense.",insight:"Force confirmée. On cherche la contrainte ailleurs."}
+  },
+  marge:{
+    critique:{emoji:"🔴",titre:"Monétisation — Fuite silencieuse",corps:"trop peu reste dans votre poche. Vous travaillez peut-être beaucoup pour un résultat net insuffisant. Prix, coûts, upsells — on ouvre tout ça lors de la session.",insight:"Un problème de marge se règle souvent sans trouver de nouveaux clients."},
+    moyen:{emoji:"🟡",titre:"Monétisation — Potentiel inexploité",corps:"des leviers existent. Une offre récurrente, un upsell simple ou un ajustement de prix peut changer l'équation sans effort supplémentaire.",insight:"C'est souvent le levier le plus rapide à activer."},
+    bon:{emoji:"🟢",titre:"Monétisation — Structure saine",corps:"votre modèle est économiquement viable. La marge tient. On cherchera comment la multiplier plutôt que la défendre.",insight:"Bonne base. On regarde comment aller plus loin."}
+  },
+  capacite:{
+    critique:{emoji:"🔴",titre:"Capacité — Plafond atteint",corps:"votre machine de delivery est déjà à saturation ou très proche. Croître dans ces conditions crée de la mauvaise qualité ou de l'épuisement. On identifie le goulot précis.",insight:"Inutile d'accélérer l'acquisition si la livraison ne suit pas."},
+    moyen:{emoji:"🟡",titre:"Capacité — Marge limitée",corps:"vous pouvez encore absorber de la croissance, mais la marge est limitée. On regardera comment créer de l'espace sans recruter précipitamment.",insight:"Quelques réorganisations peuvent libérer beaucoup."},
+    bon:{emoji:"🟢",titre:"Capacité — Machine opérationnelle",corps:"votre système de livraison peut absorber la croissance. C'est un avantage structurel. On vérifie que ce n'est pas sous-utilisé.",insight:"Actif sous-exploité à valoriser."}
+  },
+  tresorerie:{
+    critique:{emoji:"🔴",titre:"Trésorerie — Urgence réelle",corps:"une pression financière directe est signalée. C'est un stoppeur psychologique puissant qui altère chaque décision. On en fait une priorité absolue dans la session.",insight:"La trésorerie sous pression est le plus grand ennemi de la clarté."},
+    moyen:{emoji:"🟡",titre:"Trésorerie — Tension perceptible",corps:"votre trésorerie tient — mais sans confort. Le stress est présent, même s'il n'est pas paralysant. On cherche comment augmenter le runway sans attendre.",insight:"Un mois de trésorerie en plus change tout au niveau décisionnel."},
+    bon:{emoji:"🟢",titre:"Trésorerie — Stabilité acquise",corps:"vous avez de l'oxygène. Cette stabilité vous permet de prendre des décisions de long terme sans panique. C'est précieux.",insight:"Force à protéger en priorité lors de la croissance."}
+  },
+  marche:{
+    critique:{emoji:"🔴",titre:"Marché — Différenciation absente",corps:"votre positionnement se confond avec celui de vos concurrents. Dans ce cas, le prix devient le seul critère de choix — ce qui comprime tout. On travaille l'angle unique.",insight:"Sans différenciation claire, tout effort d'acquisition coûte plus cher."},
+    moyen:{emoji:"🟡",titre:"Marché — Positionnement à préciser",corps:"vous avez une identité — mais elle n'est pas encore assez tranchée. Vos clients vous choisissent, mais ils auraient du mal à expliquer pourquoi précisément.",insight:"Un positionnement précis rend chaque vente plus facile."},
+    bon:{emoji:"🟢",titre:"Marché — Identité forte",corps:"vous occupez une position claire et désirable. Vos clients savent pourquoi ils vous choisissent. C'est un avantage compétitif durable.",insight:"Capitaliser dessus dans chaque communication."}
+  }
+};
+
+function showMicroSondage(pilier, score, nextStep) {
+  const lvl = score<4?"critique":score<7?"moyen":"bon";
+  const lec = LECTURES[pilier][lvl];
+  const c = scoreColor(score);
+  const prenom = (STATE.data.s0||{}).prenom||"";
+  const modal = document.getElementById('micro-modal');
+  modal.innerHTML = `
+    <div class="modal-box">
+      <div style="background:${c}18;border-bottom:1px solid ${c}44;padding:18px 24px;display:flex;align-items:center;gap:14px">
+        <div style="width:52px;height:52px;border-radius:50%;border:2px solid ${c};display:flex;align-items:center;justify-content:center;flex-shrink:0;background:${c}15;font-size:22px">${lec.emoji}</div>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:${c}">${lec.titre}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Score ${PILIER_LABELS[pilier]} : <span style="color:${c};font-weight:700">${score.toFixed(1)}/10</span></div>
+        </div>
+      </div>
+      <div style="padding:20px 24px">
+        <p style="font-size:14px;color:var(--text);line-height:1.75;margin-bottom:16px">${prenom?prenom+", ":""} ${lec.corps}</p>
+        <div style="background:${c}0f;border:1px solid ${c}33;border-radius:8px;padding:10px 14px;display:flex;gap:10px;align-items:flex-start">
+          <span style="color:${c};font-size:14px;flex-shrink:0">✦</span>
+          <p style="font-size:12px;color:var(--muted);line-height:1.6;font-style:italic">${lec.insight}</p>
+        </div>
+      </div>
+      <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end">
+        <button class="ghost-btn" onclick="hideMicroSondage()" style="font-size:13px">← Revoir ma section</button>
+        <button class="gold-btn" onclick="hideMicroSondage();goTo('${nextStep}')" style="font-size:13px">Continuer →</button>
+      </div>
+    </div>`;
+  modal.classList.remove('hidden');
+}
+
+function hideMicroSondage() {
+  document.getElementById('micro-modal').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════
+// EMAIL MODAL
+// ═══════════════════════════════════════════════════
+function showEmailModal() {
+  const prenom = (STATE.data.s0||{}).prenom||"";
+  const entreprise = (STATE.data.s0||{}).entreprise||"";
+  const email = (STATE.data.s0||{}).email||"";
+  const date = new Date().toLocaleDateString("fr-FR",{weekday:"long",year:"numeric",month:"long",day:"numeric"});
+  const emailBody = `Objet : Votre diagnostic Clarté Rentable™ — Dossier reçu\n\nBonjour ${prenom},\n\nVotre questionnaire de Diagnostic ISD™ a bien été reçu le ${date}.\n\nVotre dossier est maintenant entre les mains de l'Architecte de Clarté Rentable™ qui va l'analyser en détail avant votre session de restitution.\n\nVous recevrez sous 48 heures ouvrées :\n— La date et l'heure de votre session\n— Le lien de connexion\n— Votre rapport personnalisé (plan 30 jours + action prioritaire 48h)\n\nEn attendant, pas d'action requise de votre part. Votre travail de préparation est fait.\n\nÀ très bientôt,\nL'Architecte de Clarté Rentable™`;
+  const modal = document.getElementById('email-modal');
+  modal.innerHTML = `
+    <div class="modal-box wide">
+      <div style="padding:18px 24px;border-bottom:1px solid var(--border);background:#27AE600a;display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:#27AE6022;border:2px solid #27AE6055;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:var(--green)">✓</div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--green)">Diagnostic soumis avec succès !</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${prenom?prenom+" — ":""}${entreprise||email}</div>
+        </div>
+      </div>
+      <div style="padding:20px 24px">
+        <div style="background:#27AE600f;border:1px solid #27AE6033;border-radius:10px;padding:16px;margin-bottom:20px">
+          <p style="font-size:13px;color:var(--text);line-height:1.7">Votre dossier a été transmis à l'Architecte de Clarté Rentable™. Une analyse complète vous sera remise lors de votre session de restitution <strong>sous 48 heures ouvrées</strong>.</p>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <label style="color:var(--gold);font-size:13px;font-weight:600;margin:0">📧 Email de confirmation à envoyer à votre client</label>
+            <button id="copy-btn" onclick="copyEmail()" style="background:#C9A84C18;border:1px solid #C9A84C55;color:var(--gold);padding:5px 12px;font-size:12px;border-radius:6px">Copier</button>
+          </div>
+          <div style="background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:14px;max-height:180px;overflow-y:auto">
+            <pre id="email-body-text" style="font-size:11px;color:var(--muted);line-height:1.7;white-space:pre-wrap;font-family:'DM Sans',sans-serif;margin:0">${emailBody}</pre>
+          </div>
+          <p style="font-size:11px;color:var(--muted);margin-top:8px">Envoyez manuellement depuis votre messagerie à <strong style="color:var(--text)">${email}</strong></p>
+        </div>
+      </div>
+      <div style="padding:14px 24px;border-top:1px solid var(--border);text-align:right">
+        <button class="gold-btn" onclick="hideEmailModal()" style="font-size:13px">Voir mes résultats →</button>
+      </div>
+    </div>`;
+  window._emailBody = emailBody;
+  modal.classList.remove('hidden');
+}
+
+function hideEmailModal() {
+  document.getElementById('email-modal').classList.add('hidden');
+  goTo("result");
+}
+
+function copyEmail() {
+  navigator.clipboard.writeText(window._emailBody||"").then(()=>{
+    const btn = document.getElementById('copy-btn');
+    if(btn){btn.textContent="✓ Copié!";btn.style.color="var(--green)";setTimeout(()=>{btn.textContent="Copier";btn.style.color="var(--gold)"},3000);}
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// AI ASSISTANT
+// ═══════════════════════════════════════════════════
+function toggleAI() {
+  STATE.aiOpen = !STATE.aiOpen;
+  document.getElementById('ai-btn').classList.toggle('hidden', STATE.aiOpen);
+  const panel = document.getElementById('ai-panel');
+  if (STATE.aiOpen) { panel.classList.remove('hidden'); renderAIPanel(); }
+  else { panel.classList.add('hidden'); }
+}
+
+function renderAIPanel() {
+  const step = STATE.step;
+  const panel = document.getElementById('ai-panel');
+  const QQ = {s3:"Comment améliorer mon acquisition ?",s4:"Comment augmenter mon taux de conversion ?",s5:"Comment améliorer ma marge ?",s6:"Comment augmenter ma capacité ?",s7:"Comment améliorer ma trésorerie ?",s8:"Comment me différencier ?"};
+  const qq = QQ[step]||"";
+  const msgsHtml = STATE.aiMsgs.map(m=>`
+    <div style="align-self:${m.role==="user"?"flex-end":"flex-start"};background:${m.role==="user"?"#C9A84C22":"var(--border)"};padding:8px 12px;border-radius:8px;font-size:12px;max-width:87%;line-height:1.5">${m.content}</div>
+  `).join('');
+  panel.innerHTML = `
+    <div style="padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#C9A84C0a;border-radius:12px 12px 0 0">
+      <div><span style="font-size:13px;font-weight:700;color:var(--gold)">✦ Assistant IA</span><span style="font-size:11px;color:var(--muted);margin-left:8px">${STEP_LABELS[step]||step}</span></div>
+      <button onclick="toggleAI()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">×</button>
+    </div>
+    <div id="ai-msgs" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px">
+      ${STATE.aiMsgs.length===0?`<div style="padding:12px"><p style="color:var(--muted);font-size:12px;margin-bottom:10px">Je connais vos réponses dans cette section. Posez-moi vos questions :</p>${qq?`<button onclick="aiSend('${qq.replace(/'/g,"\\'")}') " style="background:#C9A84C15;border:1px solid #C9A84C44;color:var(--gold);padding:8px 12px;border-radius:8px;font-size:12px;width:100%;text-align:left;cursor:pointer">${qq}</button>`:""}`  :msgsHtml}
+    </div>
+    <div id="ai-loading" class="hidden" style="padding:4px 12px;color:var(--muted);font-size:11px">Analyse…</div>
+    <div style="padding:10px;border-top:1px solid var(--border);display:flex;gap:6px">
+      <input id="ai-input" placeholder="Votre question…" style="flex:1;font-size:12px;padding:8px 10px" onkeydown="if(event.key==='Enter')aiSend()"/>
+      <button class="gold-btn" onclick="aiSend()" style="padding:8px 12px;font-size:13px">→</button>
+    </div>`;
+}
+
+async function aiSend(preset) {
+  const input = document.getElementById('ai-input');
+  const msg = preset||input?.value?.trim();
+  if (!msg) return;
+  if (input) input.value = '';
+  STATE.aiMsgs.push({role:"user",content:msg});
+  renderAIPanel();
+  document.getElementById('ai-loading')?.classList.remove('hidden');
+  try {
+    const resp = await fetch(API_ENDPOINT,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,
+        system:`Tu es l'assistant de l'Architecte de Clarté Rentable™. Section: ${STEP_LABELS[STATE.step]||STATE.step}. Réponds en français, concis, bienveillant. Max 3 phrases.`,
+        messages:STATE.aiMsgs})
+    });
+    const json = await resp.json();
+    STATE.aiMsgs.push({role:"assistant",content:json.content?.[0]?.text||"Désolé, erreur."});
+  } catch { STATE.aiMsgs.push({role:"assistant",content:"Erreur de connexion."}); }
+  renderAIPanel();
+  const msgs = document.getElementById('ai-msgs');
+  if(msgs) msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ═══════════════════════════════════════════════════
+// ADMIN PANEL
+// ═══════════════════════════════════════════════════
+function openAdmin() {
+  const input = document.getElementById('admin-input').value;
+  if(input===btoa("clarté-rentable-admin-2026")||input==="admin2026"){
+    document.getElementById('admin-err').textContent="";
+    renderAdmin();
+    document.getElementById('admin-panel').classList.remove('hidden');
+  } else {
+    document.getElementById('admin-err').textContent="Mot de passe incorrect.";
+  }
+}
+
+async function renderAdmin() {
+  document.getElementById('admin-panel').innerHTML = `
+    <div class="admin-box">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#C9A84C08">
+        <span style="color:var(--gold);font-weight:700;font-size:15px">⬡ Dashboard Admin — Diagnostic Clarté Rentable™</span>
+        <button onclick="document.getElementById('admin-panel').classList.add('hidden')" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+      </div>
+      <div style="padding:40px;text-align:center;color:var(--muted)">
+        <span class="saving-dot"></span> Chargement des dossiers…
+      </div>
+    </div>`;
+  document.getElementById('admin-panel').classList.remove('hidden');
+
+  const dossiers = await loadAllDossiers();
+  const notes = stor("admin:notes")||{};
+  const rapportLog = stor("admin:rapport_log")||{};
+
+  const total = dossiers.length;
+  const avg = total>0?(dossiers.reduce((a,d)=>a+(d.score_global||0),0)/total).toFixed(1):"—";
+  const stopCounts={};
+  dossiers.forEach(d=>{const s=d.stoppeur;if(s)stopCounts[s]=(stopCounts[s]||0)+1;});
+  const topStop = Object.entries(stopCounts).sort((a,b)=>b[1]-a[1])[0];
+  const topStopLabel = topStop?PILIER_LABELS[topStop[0]]||topStop[0]:"—";
+  const valides = dossiers.filter(d=>d.statut_suivi==="client").length;
+
+  function timeAgo(date){
+    if(!date)return "—";
+    const d=Math.floor((Date.now()-new Date(date).getTime())/86400000);
+    return d===0?"aujourd'hui":d===1?"hier":`il y a ${d}j`;
+  }
+
+  const listHtml = dossiers.map((d)=>{
+    const prenom=(d.prenom||"—")+" "+(d.nom||"");
+    const sc=d.score_global||0;
+    const c=sc<4?"var(--red)":sc<7?"var(--orange)":"var(--green)";
+    const statut=d.statut_suivi||"nouveau";
+    return `<div onclick="selectDossierV2('${d.id}')" style="padding:10px 12px;border-radius:8px;cursor:pointer;margin-bottom:5px;background:var(--dark);border:1px solid var(--border)" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${prenom}</div>
+        <div style="font-size:12px;font-weight:700;color:${c}">${sc}</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">${d.entreprise||"—"}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px">
+        <span style="font-size:10px;color:var(--muted)">${timeAgo(d.created_at)}</span>
+        <span style="font-size:10px;color:var(--gold)">${statut}</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('admin-panel').innerHTML = `
+    <div class="admin-box">
+      <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:#C9A84C08">
+        <span style="color:var(--gold);font-weight:700;font-size:15px">⬡ Dashboard Admin — Diagnostic Clarté Rentable™</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button onclick="exportCSV()" style="background:#C9A84C18;border:1px solid #C9A84C44;color:var(--gold);padding:5px 12px;font-size:11px;border-radius:4px">📥 Export CSV</button>
+          <button onclick="document.getElementById('admin-panel').classList.add('hidden')" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">×</button>
+        </div>
+      </div>
+      <div style="display:flex;border-bottom:1px solid var(--border)">
+        ${[{l:"Total",v:total,c:"var(--gold)"},{l:"Clients",v:valides,c:"var(--green)"},{l:"Score moyen",v:avg+"/10",c:"var(--orange)"},{l:"Stoppeur fréquent",v:topStopLabel,c:"var(--red)"}].map((s,i)=>`
+          <div style="flex:1;padding:10px 16px;${i<3?"border-right:1px solid var(--border);":""}text-align:center">
+            <div style="font-size:18px;font-weight:700;color:${s.c}">${s.v}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${s.l}</div>
+          </div>`).join('')}
+      </div>
+      <div class="admin-layout">
+        <div class="admin-sidebar">
+          <div style="padding:10px 12px;border-bottom:1px solid var(--border)">
+            <input placeholder="🔍 Rechercher…" style="font-size:12px;padding:7px 10px;margin-bottom:0" oninput="filterAdminV2(this.value)"/>
+          </div>
+          <div id="admin-list" style="flex:1;overflow-y:auto;padding:8px">${listHtml||'<p style="color:var(--muted);font-size:12px;padding:12px">Aucun dossier</p>'}</div>
+        </div>
+        <div class="admin-detail" id="admin-detail">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--muted)">
+            <div style="font-size:40px;margin-bottom:12px">⬡</div>
+            <p>Sélectionnez un dossier</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  window._adminDossiers = dossiers;
+  window._timeAgo = timeAgo;
+}
+
+function filterAdminV2(q) {
+  const items = document.querySelectorAll('#admin-list > div');
+  const dossiers = window._adminDossiers||[];
+  dossiers.forEach((d,i)=>{
+    const name=`${d.prenom||""} ${d.nom||""} ${d.entreprise||""} ${d.email||""}`.toLowerCase();
+    if(items[i]) items[i].style.display = name.includes(q.toLowerCase())?"":"none";
+  });
+}
+
+async function selectDossierV2(id) {
+  const dossiers = window._adminDossiers||[];
+  const d = dossiers.find(x=>x.id===id);
+  if(!d) return;
+  const notes = stor("admin:notes")||{};
+  const rapportLog = stor("admin:rapport_log")||{};
+  const scores = d.scores_json||{};
+  const sc = d.score_global||0;
+  const c = sc<4?"var(--red)":sc<7?"var(--orange)":"var(--green)";
+  const timeAgo = window._timeAgo||(()=>"");
+  const pdfLog = rapportLog[id+"_pdf"];
+  const wordLog = rapportLog[id+"_word"];
+
+  const scoresHtml = Object.entries(scores).map(([k,v])=>{
+    const vc=v<4?"var(--red)":v<7?"var(--orange)":"var(--green)";
+    return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="width:110px;font-size:12px;color:var(--muted)">${PILIER_LABELS[k]||k}</span>
+      <div style="flex:1"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${Math.min(v*10,100)}%;background:${vc}"></div></div></div>
+      <span style="width:36px;font-size:12px;font-weight:700;color:${vc};text-align:right">${v.toFixed(1)}</span>
+      ${k===d.stoppeur?`<span style="font-size:10px;color:var(--red)">STOP</span>`:""}
+    </div>`;
+  }).join('');
+
+  const statutOptions = ["nouveau","à contacter","appel planifié","client","non retenu","en attente"];
+
+  document.getElementById('admin-detail').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+      <div>
+        <h2 style="color:var(--gold);margin-bottom:4px">${d.prenom||""} ${d.nom||""}</h2>
+        <p style="color:var(--muted);font-size:13px">${d.entreprise||"—"}</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:3px">${d.email||"—"} · ${timeAgo(d.created_at)}</p>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:32px;font-weight:700;color:${c}">${sc}/10</div>
+        <div style="font-size:11px;color:var(--red);font-weight:600">⚠ ${PILIER_LABELS[d.stoppeur]||d.stoppeur||"—"}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">${scoresHtml}</div>
+
+    <div style="background:var(--dark);border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:8px">STATUT DE SUIVI</div>
+      <select id="statut-select" onchange="updateStatut('${id}',this.value)" style="font-size:12px">
+        ${statutOptions.map(s=>`<option value="${s}" ${d.statut_suivi===s?"selected":""}>${s}</option>`).join('')}
+      </select>
+    </div>
+
+    <div style="background:var(--dark);border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:10px">WORKFLOW RAPPORT</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button onclick="genPDFv2('${id}')" style="flex:1;background:var(--green);color:#fff;font-size:13px;padding:10px 14px;border-radius:6px;border:none;cursor:pointer;font-weight:600">📄 Rapport PDF</button>
+        <button onclick="genWordV2('${id}')" style="flex:1;background:#2C5282;color:#fff;font-size:13px;padding:10px 14px;border-radius:6px;border:none;cursor:pointer;font-weight:600">📝 Rapport Word</button>
+      </div>
+      ${(pdfLog||wordLog)?`<div style="font-size:10px;color:var(--muted);display:flex;gap:12px">${pdfLog?`<span>📄 PDF ${timeAgo(pdfLog)}</span>`:""}${wordLog?`<span>📝 Word ${timeAgo(wordLog)}</span>`:""}</div>`:""}
+    </div>
+
+    <div style="background:var(--dark);border-radius:8px;padding:14px;margin-bottom:14px;border:1px solid var(--border)">
+      <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:8px">📝 NOTES INTERNES</div>
+      <textarea id="note-input" rows="3" placeholder="Vos observations privées…" style="font-size:12px;resize:vertical;margin-bottom:8px">${notes[id]||""}</textarea>
+      <button onclick="saveNoteV2('${id}')" style="background:#C9A84C22;border:1px solid #C9A84C55;color:var(--gold);padding:6px 14px;font-size:12px;border-radius:4px;cursor:pointer">Sauvegarder</button>
+    </div>
+
+    <details style="background:var(--dark);border-radius:8px;border:1px solid var(--border)">
+      <summary style="padding:12px 14px;cursor:pointer;font-size:12px;color:var(--gold);font-weight:700">Données brutes</summary>
+      <div style="padding:0 14px 14px;font-size:11px;color:var(--muted);line-height:1.8">
+        <pre style="white-space:pre-wrap;word-break:break-all">${JSON.stringify(d.data_json||{}, null, 2)}</pre>
+      </div>
+    </details>`;
+  window._selectedId = id;
+}
+
+async function updateStatut(id, val) {
+  await updateAdminField(id, {statut_suivi: val});
+  const dossiers = window._adminDossiers||[];
+  const d = dossiers.find(x=>x.id===id);
+  if(d) d.statut_suivi = val;
+}
+
+function saveNoteV2(id) {
+  const val = document.getElementById('note-input')?.value||"";
+  const n = stor("admin:notes")||{};
+  n[id]=val;
+  stor("admin:notes",n);
+  const btn = event.target;
+  btn.textContent="✓ Sauvegardé";
+  setTimeout(()=>btn.textContent="Sauvegarder",2000);
+}
+
+function exportCSV() {
+  const dossiers = window._adminDossiers||[];
+  if(!dossiers.length){alert("Aucun dossier à exporter.");return;}
+  const headers = ["ID","Prénom","Nom","Email","Entreprise","Score Global","Stoppeur","Statut","Date"];
+  const rows = dossiers.map(d=>[
+    d.id||"",d.prenom||"",d.nom||"",d.email||"",d.entreprise||"",
+    d.score_global||"",PILIER_LABELS[d.stoppeur]||d.stoppeur||"",
+    d.statut_suivi||"",d.created_at?new Date(d.created_at).toLocaleDateString("fr-FR"):""
+  ]);
+  const csv = [headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");a.href=url;a.download=`diagnostics_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+}
+
+function genPDFv2(id) {
+  const dossiers = window._adminDossiers||[];
+  const d = dossiers.find(x=>x.id===id);
+  if(!d) return;
+  const scores = d.scores_json||{};
+  const name = `${d.prenom||""} ${d.nom||""}`.trim()||"Client";
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Rapport ${name}</title>
+  <style>body{font-family:Arial,sans-serif;background:#080810;color:#F5F0E8;padding:40px;max-width:900px;margin:0 auto}
+  h1,h2{color:#C9A84C}h1{font-size:2em;border-bottom:2px solid #C9A84C;padding-bottom:10px}
+  h2{font-size:1.3em;margin-top:32px;border-left:4px solid #C9A84C;padding-left:12px}
+  p{line-height:1.7;margin:12px 0}
+  .cover{text-align:center;padding:60px 0;border-bottom:2px solid #C9A84C;margin-bottom:40px}
+  table{width:100%;border-collapse:collapse;margin:16px 0}td,th{padding:10px 14px;border:1px solid #2A2A3A;font-size:13px}
+  th{background:#C9A84C22;color:#C9A84C;font-weight:700}
+  @media print{body{background:#fff;color:#000}h1,h2{color:#8a6000}}</style></head>
+  <body>
+  <div class="cover"><h1>RAPPORT DE DIAGNOSTIC</h1><h2>Clarté Rentable™</h2>
+  <p style="font-size:1.2em;font-weight:700">${name} — ${d.entreprise||"—"}</p>
+  <p style="color:#C9A84C">Score ISD™ : ${d.score_global}/10</p>
+  <p style="color:#C0392B;font-weight:700">Stoppeur : ${PILIER_LABELS[d.stoppeur]||d.stoppeur||"—"}</p></div>
+  <h2>Scores par pilier</h2>
+  <table><tr><th>Pilier</th><th>Score</th><th>Statut</th></tr>
+  ${Object.entries(scores).map(([k,v])=>`<tr><td>${PILIER_LABELS[k]||k}</td><td>${v.toFixed(1)}/10</td><td>${v<4?"🔴 Critique":v<7?"🟡 À améliorer":"🟢 Bon"}</td></tr>`).join('')}
+  </table>
+  <p style="font-size:11px;color:#888;text-align:center;margin-top:40px">Document confidentiel — Clarté Rentable™ — ${new Date().toLocaleDateString('fr-FR')}</p>
+  </body></html>`;
+  const w=window.open("","_blank");
+  w.document.write(html);w.document.close();
+  setTimeout(()=>w.print(),600);
+  const log=stor("admin:rapport_log")||{};
+  log[id+"_pdf"]=new Date().toISOString();
+  stor("admin:rapport_log",log);
+}
+
+async function genWordV2(id) {
+  const dossiers = window._adminDossiers||[];
+  const d = dossiers.find(x=>x.id===id);
+  if(!d){alert("Dossier introuvable.");return;}
+  const btn=event.target;
+  btn.textContent="Génération IA…";btn.disabled=true;
+  try {
+    const scores = d.scores_json||{};
+    const name=`${d.prenom||""} ${d.nom||""}`.trim()||"Client";
+    const resp=await fetch(API_ENDPOINT,{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:3000,
+        messages:[{role:"user",content:`Tu es l'Architecte de Clarté Rentable™. Génère un rapport de diagnostic complet pour ${name} (${d.entreprise||"—"}).\nScores ISD™: ${JSON.stringify(scores)} — Global: ${d.score_global}/10 — Stoppeur: ${PILIER_LABELS[d.stoppeur]||d.stoppeur}\nDonnées: ${JSON.stringify(d.data_json||{})}\nGénère un rapport structuré avec: 1) Lecture froide du profil, 2) Analyse stoppeur dominant, 3) Plan 30 jours semaine par semaine, 4) KPIs, 5) Action 48h. En français, direct, percutant. Ne mentionne jamais Hormozi, Goldratt, Jay Abraham, Naval.`}]})
+    });
+    const json=await resp.json();
+    const txt=json.content?.[0]?.text||"";
+    const blob=new Blob([`RAPPORT DE DIAGNOSTIC — CLARTÉ RENTABLE™\n${name} — ${d.entreprise||"—"}\nScore Global : ${d.score_global}/10\nStoppeur Dominant : ${PILIER_LABELS[d.stoppeur]||""}\nDate : ${new Date().toLocaleDateString('fr-FR')}\n\n${"=".repeat(60)}\n\n${txt}`],{type:"text/plain;charset=utf-8"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");a.href=url;a.download=`Rapport_${name.replace(/\s+/g,"_")}.txt`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    const log=stor("admin:rapport_log")||{};
+    log[id+"_word"]=new Date().toISOString();
+    stor("admin:rapport_log",log);
+    btn.textContent="✓ Téléchargé !";
+    setTimeout(()=>{btn.textContent="📝 Rapport Word";btn.disabled=false;},3000);
+  } catch(e){alert("Erreur: "+e.message);btn.textContent="📝 Rapport Word";btn.disabled=false;}
+}
+
+// ═══════════════════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════════════════
+function field(label, key, section, opts={}) {
+  const val = (STATE.data[section]||{})[key]||"";
+  const err = STATE.fieldErrors[key]||"";
+  const req = opts.required;
+  const wrap = document.createElement('div');
+  wrap.className='field-wrap';
+  const lbl = document.createElement('label');
+  lbl.innerHTML = label+(req?` <span style="color:var(--gold)">*</span>`:"");
+  wrap.appendChild(lbl);
+  let inp;
+  if(opts.type==="textarea"){
+    inp=document.createElement('textarea');
+    inp.rows=opts.rows||2;inp.style.resize="vertical";
+    inp.value=val;inp.placeholder=opts.placeholder||"";
+  } else if(opts.type==="range"){
+    inp=document.createElement('input');
+    inp.type="range";inp.min=opts.min||1;inp.max=opts.max||10;
+    inp.value=val||opts.default||5;
+    inp.style.width="100%";inp.style.accentColor="var(--gold)";
+    const disp=document.createElement('div');
+    disp.style.cssText="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px";
+    const mid=document.createElement('span');
+    mid.style.cssText="color:var(--gold);font-weight:700;font-size:14px";
+    mid.textContent=inp.value;mid.id="range-disp-"+key;
+    disp.innerHTML=`<span>${opts.minLabel||"1"}</span>`;
+    disp.appendChild(mid);
+    disp.innerHTML+=`<span>${opts.maxLabel||"10"}</span>`;
+    inp.oninput=()=>{updateData(section,key,inp.value);const d2=document.getElementById("range-disp-"+key);if(d2)d2.textContent=inp.value;};
+    wrap.appendChild(inp);wrap.appendChild(disp);
+    updateData(section,key,inp.value);
+    return wrap;
+  } else {
+    inp=document.createElement('input');
+    inp.type=opts.type||"text";
+    inp.value=val;inp.placeholder=opts.placeholder||"";
+  }
+  if(err){inp.classList.add('error');}
+  inp.oninput=()=>updateData(section,key,inp.value);
+  if(opts.type==="textarea") inp.oninput=()=>updateData(section,key,inp.value);
+  wrap.appendChild(inp);
+  if(err){const e2=document.createElement('div');e2.className='field-error';e2.textContent="⚠ "+err;wrap.appendChild(e2);}
+  return wrap;
+}
+
+function radioGroup(label, key, section, options, opts={}) {
+  const val=(STATE.data[section]||{})[key]||"";
+  const err=STATE.fieldErrors[key]||"";
+  const req=opts.required;
+  const wrap=document.createElement('div');wrap.className='field-wrap';
+  const lbl=document.createElement('label');
+  lbl.innerHTML=label+(req?` <span style="color:var(--gold)">*</span>`:"");
+  wrap.appendChild(lbl);
+  const grp=document.createElement('div');grp.className='radio-group';
+  options.forEach(({value,label:l})=>{
+    const btn=document.createElement('button');
+    btn.className='radio-opt'+(val===value?" active":"")+(err&&!val?" err":"");
+    btn.textContent=l;
+    btn.onclick=()=>{updateData(section,key,value);grp.querySelectorAll('.radio-opt').forEach(b=>{b.classList.remove('active','err');});btn.classList.add('active');};
+    grp.appendChild(btn);
+  });
+  wrap.appendChild(grp);
+  if(err){const e2=document.createElement('div');e2.className='field-error';e2.textContent="⚠ "+err;wrap.appendChild(e2);}
+  return wrap;
+}
+
+function meter(section) {
+  const div=document.createElement('div');div.id='score-meter';
+  setTimeout(()=>updateMeter(section),100);
+  return div;
+}
+
+function navBtns(isLast) {
+  const div=document.createElement('div');div.className='nav-btns';
+  const back=document.createElement('button');back.className='ghost-btn';back.textContent='← Retour';
+  back.disabled=STEPS.indexOf(STATE.step)<=1;
+  back.onclick=goBack;
+  const next=document.createElement('button');next.className='gold-btn';
+  next.textContent=isLast?"Voir mes résultats →":"Continuer →";
+  next.onclick=goNext;
+  div.appendChild(back);div.appendChild(next);
+  return div;
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE RENDERERS
+// ═══════════════════════════════════════════════════
+
+// WELCOME — Remplace l'ancien Auth
+function renderWelcome() {
+  document.getElementById('ai-btn').classList.add('hidden');
+  const wrap=document.createElement('div');
+  wrap.style.cssText="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--dark)";
+  const box=document.createElement('div');box.style.width="100%";box.style.maxWidth="520px";
+  box.innerHTML=`
+    <div style="text-align:center;margin-bottom:40px">
+      <div style="font-size:40px;margin-bottom:16px">⬡</div>
+      <h1 style="color:var(--gold);font-size:1.9rem;margin-bottom:10px">Diagnostic Clarté Rentable™</h1>
+      <p style="color:var(--muted);font-size:14px;line-height:1.7">Intelligence de Séquence Dominante™<br>Identifiez votre Stoppeur Dominant en 15 minutes.</p>
+    </div>
+    <div class="card" style="margin-bottom:24px">
+      <div class="grid2" style="margin-bottom:0">
+        ${[["🎯","9 sections","Analyse complète des 6 piliers ISD™"],["⏱","15 minutes","Sauvegarde automatique à chaque étape"],["📊","Score ISD™","Stoppeur dominant identifié avec précision"],["📋","Rapport","Plan 30 jours + action prioritaire 48h"]].map(([ico,t,d])=>`
+          <div style="padding:12px;background:var(--dark);border-radius:8px;border:1px solid var(--border)">
+            <div style="font-size:22px;margin-bottom:6px">${ico}</div>
+            <div style="font-weight:700;color:var(--text);font-size:13px;margin-bottom:3px">${t}</div>
+            <div style="font-size:11px;color:var(--muted);line-height:1.5">${d}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="background:#C9A84C0f;border:1px solid #C9A84C33;border-radius:10px;padding:14px;margin-bottom:24px">
+      <p style="font-size:13px;color:var(--text);line-height:1.7"><span style="color:var(--gold);font-weight:700">✦ Conseil :</span> Ayez sous la main vos chiffres clés — revenus, charges, taux de conversion. Plus vos réponses sont précises, plus l'analyse sera percutante.</p>
+    </div>`;
+  const btn=document.createElement('button');btn.className='gold-btn';btn.style.cssText="width:100%;font-size:15px;padding:14px";btn.textContent="Démarrer mon diagnostic →";
+  btn.onclick=goNext;
+  box.appendChild(btn);
+  const note=document.createElement('p');note.style.cssText="font-size:11px;color:var(--muted);margin-top:14px;text-align:center;line-height:1.6";note.textContent="Vos données sont privées et accessibles uniquement à l'Architecte de Clarté Rentable™.";
+  box.appendChild(note);
+  wrap.appendChild(box);
+  return wrap;
+}
+
+function renderS0() {
+  const div=document.createElement('div');div.className='page';
+  const h=document.createElement('h2');h.style.cssText="color:var(--gold);margin-bottom:6px";h.textContent="Vos informations";
+  const p=document.createElement('p');p.style.cssText="color:var(--muted);font-size:13px;margin-bottom:24px";p.textContent="Ces informations permettent de personnaliser votre rapport et de vous contacter.";
+  div.appendChild(h);div.appendChild(p);
+  const g1=document.createElement('div');g1.className='grid2';
+  g1.appendChild(field("Prénom","prenom","s0",{required:true}));
+  g1.appendChild(field("Nom","nom","s0"));
+  div.appendChild(g1);
+  div.appendChild(field("Email professionnel","email","s0",{required:true,type:"email",placeholder:"votre@email.com"}));
+  div.appendChild(field("Entreprise / Activité","entreprise","s0",{required:true,placeholder:"Ex : Cabinet Conseil, Coaching XYZ…"}));
+  div.appendChild(field("Secteur d'activité","secteur","s0",{required:true,placeholder:"Ex : Formation, Menuiserie, Conseil…"}));
+  const g2=document.createElement('div');g2.className='grid2';
+  g2.appendChild(field("Pays / Ville","pays_ville","s0"));
+  g2.appendChild(field("Téléphone","tel","s0",{type:"tel"}));
+  div.appendChild(g2);
+  div.appendChild(navBtns(false));
+  return div;
+}
+
+function renderS1() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`<h2 style="color:var(--gold);margin-bottom:6px">Période de Référence</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">Choisissez la période la plus représentative de votre activité actuelle.</p>`;
+  div.appendChild(radioGroup("Période analysée","periode","s1",[{value:"3mois",label:"3 derniers mois"},{value:"6mois",label:"6 derniers mois"},{value:"12mois",label:"12 derniers mois"}]));
+  div.appendChild(field("Revenus mensuels moyens sur cette période (DHS)","revenus_mois","s1",{type:"number",required:true,placeholder:"Ex : 15 000"}));
+  div.appendChild(radioGroup("Votre force principale","force","s1",[{value:"vente",label:"Vente"},{value:"marketing",label:"Marketing"},{value:"delivery",label:"Opérations"},{value:"produit",label:"Produit"}]));
+  div.appendChild(field("Votre plus grande frustration business en ce moment","frustration","s1",{type:"textarea",rows:2,placeholder:"Ex : Je travaille beaucoup mais les revenus ne suivent pas…"}));
+  div.appendChild(navBtns(false));
+  return div;
+}
+
+function renderS3() {
+  const div=document.createElement('div');div.className='page';
+  div.appendChild(meter("s3"));
+  div.innerHTML+=`<h2 style="color:var(--gold);margin-bottom:6px">Pilier 1 — Acquisition</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">Comment entrent les prospects dans votre business ?</p>`;
+  div.appendChild(field("Prospects qualifiés par mois","prospects_mois","s3",{type:"number",required:true,placeholder:"Ex : 20"}));
+  div.appendChild(field("Taux de RDV tenus parmi les prospects contactés (%)","taux_rdv","s3",{type:"number",placeholder:"Ex : 60"}));
+  div.appendChild(radioGroup("Votre acquisition fonctionne-t-elle sans votre présence permanente ?","autonomie","s3",[{value:"oui",label:"Oui — système en place"},{value:"non",label:"Non — tout dépend de moi"}],{required:true}));
+  div.appendChild(field("Canaux d'acquisition utilisés","canaux","s3",{placeholder:"Ex : LinkedIn, bouche-à-oreille, Facebook…"}));
+  div.appendChild(field("Canal qui génère le plus de leads qualifiés","meilleur_canal","s3"));
+  div.appendChild(navBtns(false));
+  setTimeout(()=>updateMeter("s3"),50);
+  return div;
+}
+
+function renderS4() {
+  const div=document.createElement('div');div.className='page';
+  div.appendChild(meter("s4"));
+  div.innerHTML+=`<h2 style="color:var(--gold);margin-bottom:6px">Pilier 2 — Conversion</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">Comment transformez-vous un prospect en client ?</p>`;
+  div.appendChild(field("Taux de conversion RDV → client (%)","taux_conversion","s4",{type:"number",required:true,placeholder:"Ex : 30"}));
+  div.appendChild(radioGroup("Votre promesse est-elle mesurable et spécifique ?","promesse_mesurable","s4",[{value:"oui",label:"Oui"},{value:"non",label:"Non"}]));
+  div.appendChild(radioGroup("Avez-vous des preuves sociales convaincantes ?","preuves","s4",[{value:"oui",label:"Oui"},{value:"non",label:"Non"}]));
+  div.appendChild(radioGroup("Niveau de garantie proposée","garantie","s4",[{value:"forte",label:"Forte (satisfait ou remboursé)"},{value:"partielle",label:"Partielle"},{value:"aucune",label:"Aucune"}],{required:true}));
+  div.appendChild(field("Prix de vente principal (DHS)","prix","s4",{type:"number",placeholder:"Ex : 2 000"}));
+  div.appendChild(field("Top 3 objections clients lors de la vente","objections","s4",{placeholder:"Ex : Trop cher, pas le bon moment…"}));
+  div.appendChild(navBtns(false));
+  setTimeout(()=>updateMeter("s4"),50);
+  return div;
+}
+
+function renderS5() {
+  const div=document.createElement('div');div.className='page';
+  div.appendChild(meter("s5"));
+  div.innerHTML+=`<h2 style="color:var(--gold);margin-bottom:6px">Pilier 3 — Monétisation</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">Combien reste-t-il dans votre poche par dirham encaissé ?</p>`;
+  div.appendChild(field("Marge brute estimée (% du CA)","marge_brute","s5",{type:"number",required:true,placeholder:"Ex : 70"}));
+  div.appendChild(field("% de clients achetant un produit complémentaire","pct_upsell","s5",{type:"number",placeholder:"Ex : 20"}));
+  div.appendChild(radioGroup("Avez-vous une offre récurrente (abonnement, retainer) ?","offre_recurrente","s5",[{value:"oui",label:"Oui"},{value:"non",label:"Non"}]));
+  const g=document.createElement('div');g.className='grid2';
+  g.appendChild(field("LTV estimée (DHS)","ltv","s5",{type:"number",placeholder:"Ex : 5 000"}));
+  g.appendChild(field("Panier moyen (DHS)","panier_moyen","s5",{type:"number",placeholder:"Ex : 1 500"}));
+  div.appendChild(g);
+  div.appendChild(navBtns(false));
+  setTimeout(()=>updateMeter("s5"),50);
+  return div;
+}
+
+function renderS6() {
+  const div=document.createElement('div');div.className='page';
+  div.appendChild(meter("s6"));
+  div.innerHTML+=`<h2 style="color:var(--gold);margin-bottom:6px">Pilier 4 — Capacité de Production</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">Votre machine peut-elle livrer plus sans se casser ?</p>`;
+  const g=document.createElement('div');g.className='grid2';
+  g.appendChild(field("Heures/semaine dédiées à la vente","heures_vente","s6",{type:"number",required:true,placeholder:"Ex : 10"}));
+  g.appendChild(field("Heures/semaine dédiées au delivery","heures_delivery","s6",{type:"number",placeholder:"Ex : 20"}));
+  div.appendChild(g);
+  div.appendChild(field("Nombre de clients servis simultanément","clients_simultanes","s6",{type:"number",required:true,placeholder:"Ex : 5"}));
+  div.appendChild(radioGroup("Avez-vous un résultat concret et mesurable avec un client ?","casse_premier","s6",[{value:"non",label:"Oui — résultat prouvé"},{value:"oui",label:"Non — pas encore"}]));
+  div.appendChild(field("Taille de l'équipe (vous compris)","taille_equipe","s6",{type:"number",placeholder:"Ex : 2"}));
+  div.appendChild(navBtns(false));
+  setTimeout(()=>updateMeter("s6"),50);
+  return div;
+}
+
+function renderS7() {
+  const div=document.createElement('div');div.className='page';
+  div.appendChild(meter("s7"));
+  div.innerHTML+=`<h2 style="color:var(--gold);margin-bottom:6px">Pilier 5 — Trésorerie</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">L'oxygène du business. Soyez aussi précis que possible.</p>`;
+  const g=document.createElement('div');g.className='grid2';
+  g.appendChild(field("Montant encaissé ce mois (DHS)","encaisse","s7",{type:"number",required:true,placeholder:"Ex : 8 000"}));
+  g.appendChild(field("Charges fixes mensuelles (DHS)","charges","s7",{type:"number",required:true,placeholder:"Ex : 4 000"}));
+  div.appendChild(g);
+  div.appendChild(field("Runway : mois de fonctionnement sans nouveaux revenus","runway_mois","s7",{type:"number",placeholder:"Ex : 3"}));
+  const stressWrap=document.createElement('div');stressWrap.className='field-wrap';
+  const stressLbl=document.createElement('label');stressLbl.textContent="Niveau de stress financier (1 = serein · 10 = critique)";
+  const stressInp=document.createElement('input');stressInp.type="range";stressInp.min=1;stressInp.max=10;
+  const curStress=(STATE.data.s7||{}).stress||5;
+  stressInp.value=curStress;stressInp.style.cssText="width:100%;accent-color:var(--gold);margin-top:8px";
+  const stressDisp=document.createElement('div');
+  stressDisp.style.cssText="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px";
+  stressDisp.innerHTML=`<span>1 — Serein</span><span id="stress-val" style="color:var(--gold);font-weight:700;font-size:14px">${curStress}</span><span>10 — Critique</span>`;
+  stressInp.oninput=()=>{updateData("s7","stress",stressInp.value);document.getElementById("stress-val").textContent=stressInp.value;};
+  stressWrap.appendChild(stressLbl);stressWrap.appendChild(stressInp);stressWrap.appendChild(stressDisp);
+  div.appendChild(stressWrap);
+  div.appendChild(field("Délai de paiement moyen de vos clients (jours)","delai_paiement","s7",{type:"number",placeholder:"Ex : 30"}));
+  div.appendChild(navBtns(false));
+  setTimeout(()=>updateMeter("s7"),50);
+  return div;
+}
+
+function renderS8() {
+  const div=document.createElement('div');div.className='page';
+  div.appendChild(meter("s8"));
+  div.innerHTML+=`<h2 style="color:var(--gold);margin-bottom:6px">Pilier 6 — Marché & Concurrence</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">Comment vous positionnez-vous par rapport à votre marché ?</p>`;
+  const diffWrap=document.createElement('div');diffWrap.className='field-wrap';
+  const diffLbl=document.createElement('label');
+  diffLbl.innerHTML='Score de différenciation perçue <span style="color:var(--gold)">*</span>';
+  const diffSub=document.createElement('p');diffSub.style.cssText="font-size:11px;color:var(--muted);margin-bottom:8px";diffSub.textContent="1 = vous ressemblez à tout le monde · 10 = vous êtes clairement unique";
+  const diffInp=document.createElement('input');diffInp.type="range";diffInp.min=1;diffInp.max=10;
+  const curDiff=(STATE.data.s8||{}).score_diff||5;
+  diffInp.value=curDiff;diffInp.style.cssText="width:100%;accent-color:var(--gold)";
+  const diffDisp=document.createElement('div');
+  diffDisp.style.cssText="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:4px";
+  diffDisp.innerHTML=`<span>1 — Indifférencié</span><span id="diff-val" style="color:var(--gold);font-weight:700;font-size:14px">${curDiff}/10</span><span>10 — Unique</span>`;
+  diffInp.oninput=()=>{updateData("s8","score_diff",diffInp.value);document.getElementById("diff-val").textContent=diffInp.value+"/10";};
+  diffWrap.appendChild(diffLbl);diffWrap.appendChild(diffSub);diffWrap.appendChild(diffInp);diffWrap.appendChild(diffDisp);
+  div.appendChild(diffWrap);
+  div.appendChild(field("Votre positionnement en une phrase","positionnement","s8",{placeholder:"Ex : J'aide les PME industrielles à réduire leurs délais de production de 40%"}));
+  const concWrap=document.createElement('div');concWrap.className='field-wrap';
+  const concLbl=document.createElement('label');concLbl.textContent="Vos principaux concurrents";
+  concWrap.appendChild(concLbl);
+  const concs=(STATE.data.s8||{}).concurrents||[{},{},{}];
+  concs.slice(0,3).forEach((c,i)=>{
+    const row=document.createElement('div');row.style.cssText="background:var(--dark);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border)";
+    row.innerHTML=`<div style="font-size:11px;color:var(--gold);margin-bottom:8px;font-weight:600">Concurrent ${i+1}</div>`;
+    const g3=document.createElement('div');g3.className='grid3';
+    ['nom','force','faiblesse'].forEach((fld,j)=>{
+      const fw=document.createElement('div');fw.className='field-wrap';fw.style.margin=0;
+      const l=document.createElement('label');l.style.marginBottom='4px';l.textContent=['Nom','Sa force','Sa faiblesse'][j];
+      const inp=document.createElement('input');inp.value=c[fld]||"";inp.placeholder=['Ex : Concurrent A','Ce qu\'il fait bien','Son point faible'][j];
+      inp.oninput=()=>{
+        const arr=(STATE.data.s8||{}).concurrents||[{},{},{}];
+        if(!arr[i])arr[i]={};
+        arr[i][fld]=inp.value;
+        updateData("s8","concurrents",arr);
+      };
+      fw.appendChild(l);fw.appendChild(inp);g3.appendChild(fw);
+    });
+    row.appendChild(g3);concWrap.appendChild(row);
+  });
+  div.appendChild(concWrap);
+  div.appendChild(navBtns(false));
+  setTimeout(()=>updateMeter("s8"),50);
+  return div;
+}
+
+function renderObjectif() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`<h2 style="color:var(--gold);margin-bottom:6px">Objectifs & Synthèse Finale</h2><p style="color:var(--muted);font-size:13px;margin-bottom:24px">Dernière étape. Ces réponses guident la personnalisation de votre rapport.</p>`;
+  const g=document.createElement('div');g.className='grid2';
+  g.appendChild(field("Objectif de revenu mensuel cible (DHS)","objectif_revenu","objectif",{type:"number",required:true,placeholder:"Ex : 30 000"}));
+  const delaiDiv=document.createElement('div');
+  delaiDiv.appendChild(radioGroup("Délai pour atteindre cet objectif","delai","objectif",[{value:"3mois",label:"3 mois"},{value:"6mois",label:"6 mois"},{value:"12mois",label:"12 mois"},{value:"24mois",label:"24 mois"}],{required:true}));
+  g.appendChild(delaiDiv);
+  div.appendChild(g);
+  div.appendChild(field("Décrivez votre situation actuelle en une phrase","phrase1","objectif",{type:"textarea",rows:2,placeholder:"Ex : Je travaille dur mais le cash ne suit pas…"}));
+  div.appendChild(field("Qu'est-ce qui vous empêche d'atteindre votre objectif ?","phrase2","objectif",{type:"textarea",rows:2,placeholder:"Ex : Je manque de prospects qualifiés…"}));
+  div.appendChild(field("Si vous pouviez changer une seule chose maintenant, ce serait…","phrase3","objectif",{type:"textarea",rows:2}));
+  div.appendChild(navBtns(true));
+  return div;
+}
+
+async function renderResult() {
+  document.getElementById('ai-btn').classList.add('hidden');
+  const isd=STATE.isd;
+  if(!isd) return document.createElement('div');
+  const {scores,global,stoppeur}=isd;
+  const gc=global<4?"var(--red)":global<7?"var(--orange)":"var(--green)";
+  const stoppeurLabel=PILIER_LABELS[stoppeur]||stoppeur;
+  const div=document.createElement('div');div.className='page';
+
+  const scoreCard=document.createElement('div');
+  scoreCard.style.cssText="text-align:center;margin-bottom:32px;padding:32px 24px;background:var(--dark2);border-radius:12px;border:1px solid var(--border)";
+  scoreCard.innerHTML=`
+    <p style="color:var(--muted);font-size:13px;margin-bottom:8px">Score ISD™ Global</p>
+    <div style="font-size:4.5rem;font-weight:700;color:${gc};font-family:'DM Serif Display',serif;line-height:1">${global}</div>
+    <div style="font-size:18px;color:var(--muted);margin-bottom:20px">/10</div>
+    <div style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:#C0392B18;border:1px solid #C0392B44;border-radius:24px">
+      <span style="color:var(--red);font-size:14px">⚠</span>
+      <span style="color:var(--red);font-weight:700;font-size:14px">Stoppeur Dominant : ${stoppeurLabel}</span>
+    </div>`;
+  div.appendChild(scoreCard);
+
+  const barsDiv=document.createElement('div');barsDiv.style.cssText="display:flex;flex-direction:column;gap:12px;margin-bottom:28px";
+  Object.entries(scores).forEach(([k,v])=>{
+    const vc=v<4?"var(--red)":v<7?"var(--orange)":"var(--green)";
+    const row=document.createElement('div');
+    row.style.cssText=`display:flex;align-items:center;gap:14px;padding:10px 14px;background:var(--dark2);border-radius:8px;border:1px solid ${k===stoppeur?"#C0392B55":"var(--border)"}`;
+    row.innerHTML=`
+      <span style="width:120px;font-size:13px;color:var(--text);font-weight:${k===stoppeur?700:400}">${k===stoppeur?"⚠ ":""}${PILIER_LABELS[k]||k}</span>
+      <div style="flex:1"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${Math.min(v*10,100)}%;background:${vc}"></div></div></div>
+      <span style="width:44px;text-align:right;font-size:14px;font-weight:700;color:${vc}">${v.toFixed(1)}</span>`;
+    barsDiv.appendChild(row);
+  });
+  div.appendChild(barsDiv);
+
+  const aiCard=document.createElement('div');
+  aiCard.style.cssText="background:var(--dark2);border:1px solid #C9A84C33;border-radius:12px;padding:24px;margin-bottom:24px";
+  aiCard.innerHTML=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px"><span style="color:var(--gold);font-size:16px">✦</span><h3 style="color:var(--gold);font-size:15px">Analyse de l'Architecte de Clarté Rentable™</h3></div><div id="ai-analysis"><span style="color:var(--muted);font-size:13px"><span class="saving-dot"></span> Analyse de votre profil en cours…</span></div>`;
+  div.appendChild(aiCard);
+
+  const cta=document.createElement('div');
+  cta.style.cssText="background:#C9A84C0d;border:1px solid #C9A84C33;border-radius:12px;padding:24px";
+  cta.innerHTML=`
+    <h3 style="color:var(--gold);margin-bottom:10px">Prochaine étape</h3>
+    <p style="color:var(--text);font-size:14px;line-height:1.7;margin-bottom:16px">Votre dossier a été transmis à l'Architecte de Clarté Rentable™. Une analyse complète avec votre <strong>plan d'action 30 jours</strong> et votre <strong>action prioritaire 48h</strong> vous sera remise lors de votre session.</p>
+    <div style="padding:12px 16px;background:#27AE6018;border-radius:8px;border:1px solid #27AE6044">
+      <p style="font-size:13px;color:var(--green);font-weight:600">✓ Dossier reçu — vous serez contacté sous 48 heures ouvrées.</p>
+    </div>`;
+  div.appendChild(cta);
+
+  const prenom=(STATE.data.s0||{}).prenom||"";
+  fetch(API_ENDPOINT,{
+    method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:600,
+      messages:[{role:"user",content:`Tu es l'Architecte de Clarté Rentable™. En 3 paragraphes courts et percutants, dis à ${prenom||"ce dirigeant"} ce que révèle son score ISD™. Score global: ${global}/10. Stoppeur dominant: ${stoppeurLabel} (score: ${scores[stoppeur]?.toFixed(1)}). Tous les scores: ${JSON.stringify(scores)}. Commence par "Votre diagnostic révèle…". Ne mentionne jamais Hormozi, Goldratt, Jay Abraham, Naval.`}]})
+  }).then(r=>r.json()).then(json=>{
+    const txt=json.content?.[0]?.text||"";
+    const el=document.getElementById('ai-analysis');
+    if(el) el.innerHTML=txt.split(/\n+/).filter(Boolean).map(p=>`<p style="color:var(--text);font-size:14px;line-height:1.8;margin-bottom:10px">${p}</p>`).join('');
+  }).catch(()=>{
+    const el=document.getElementById('ai-analysis');
+    if(el) el.textContent="Analyse disponible lors de votre session de restitution.";
+  });
+
+  return div;
+}
+
+// ═══════════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════════
+async function render() {
+  const content=document.getElementById('content');
+  const errBanner=document.getElementById('error-banner');
+  const hasErrs=Object.keys(STATE.fieldErrors).length>0;
+  errBanner.classList.toggle('hidden',!hasErrs);
+  const showAI=!["welcome","result"].includes(STATE.step);
+  document.getElementById('ai-btn').classList.toggle('hidden',!showAI);
+  if(!showAI&&STATE.aiOpen){STATE.aiOpen=false;document.getElementById('ai-panel').classList.add('hidden');}
+  updateProgress();
+  let page;
+  switch(STATE.step){
+    case "welcome": page=renderWelcome(); break;
+    case "s0": page=renderS0(); break;
+    case "s1": page=renderS1(); break;
+    case "s3": page=renderS3(); break;
+    case "s4": page=renderS4(); break;
+    case "s5": page=renderS5(); break;
+    case "s6": page=renderS6(); break;
+    case "s7": page=renderS7(); break;
+    case "s8": page=renderS8(); break;
+    case "objectif": page=renderObjectif(); break;
+    case "result": page=await renderResult(); break;
+    default: page=document.createElement('div');
+  }
+  content.innerHTML='';
+  content.appendChild(page);
+}
+
+// ═══════════════════════════════════════════════════
+// BOOT — Reprendre session si existante
+// ═══════════════════════════════════════════════════
+(async function boot() {
+  const savedId = stor("session_id");
+  const savedData = stor("session_data");
+  const savedStep = stor("session_step");
+  if (savedId && savedData) {
+    STATE.sessionId = savedId;
+    STATE.data = savedData;
+    if (savedStep && savedStep !== "result") {
+      STATE.step = savedStep;
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
