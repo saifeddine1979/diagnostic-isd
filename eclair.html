@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diagnostic Éclair ISD™ — Séquence Dominante Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080810;color:#F5F0E8;font-family:'DM Sans',sans-serif;min-height:100vh}
+:root{--gold:#C9A84C;--dark:#080810;--dark2:#0F0F1A;--border:#2A2A3A;--text:#F5F0E8;--muted:#8A8A9A;--red:#C0392B;--green:#27AE60;--orange:#E67E22;--blue:#2C5282}
+input,textarea{background:var(--dark2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;width:100%;outline:none;transition:border .2s}
+input:focus,textarea:focus{border-color:var(--gold)}
+input.error,textarea.error{border-color:var(--red)!important}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border:none;border-radius:6px;transition:all .2s}
+label{font-size:13px;color:var(--muted);display:block;margin-bottom:6px}
+h1,h2,h3{font-family:'DM Serif Display',serif}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--dark2)}::-webkit-scrollbar-thumb{background:#C9A84C44;border-radius:4px}
+.gold-btn{background:var(--gold);color:var(--dark);padding:12px 24px;font-size:14px;font-weight:600;border-radius:6px;border:none;width:100%}
+.gold-btn:hover{opacity:.9;transform:translateY(-1px)}
+.gold-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.ghost-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:10px 20px;font-size:13px;border-radius:6px}
+.ghost-btn:hover{border-color:var(--gold);color:var(--gold)}
+.field-wrap{margin-bottom:18px}
+.field-error{color:var(--red);font-size:11px;margin-top:4px}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.page{animation:fadeInUp .35s ease}
+.saving-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite}
+.hidden{display:none!important}
+#topbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+#progressbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:16px}
+#content{max-width:620px;margin:0 auto;padding:32px 20px 100px}
+.choice-card{background:var(--dark2);border:2px solid var(--border);border-radius:10px;padding:16px 20px;cursor:pointer;transition:all .2s;margin-bottom:10px;text-align:left;width:100%}
+.choice-card:hover{border-color:var(--gold);background:#C9A84C08}
+.choice-card.selected{border-color:var(--gold);background:#C9A84C12}
+.choice-card .choice-label{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.choice-card .choice-sub{font-size:12px;color:var(--muted);line-height:1.5}
+.nav-btns{display:flex;justify-content:space-between;margin-top:28px;padding-top:20px;border-top:1px solid var(--border);gap:12px}
+.insight-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.insight-item:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <span style="color:var(--gold);font-weight:700;font-family:'DM Serif Display',serif;font-size:17px">⬡ Séquence Dominante Academy™</span>
+  <span style="font-size:12px;color:var(--muted)">Diagnostic Éclair ISD™</span>
+</div>
+
+<!-- PROGRESS BAR -->
+<div id="progressbar" class="hidden">
+  <div style="flex:1;background:var(--border);border-radius:4px;height:4px;overflow:hidden">
+    <div id="progress-fill" style="height:100%;background:var(--gold);border-radius:4px;transition:width .5s;width:0%"></div>
+  </div>
+  <span id="progress-pct" style="font-size:12px;color:var(--gold);font-weight:700;min-width:36px">0%</span>
+  <span id="progress-label" style="font-size:11px;color:var(--muted)"></span>
+</div>
+
+<div id="content"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════
+const SUPABASE_URL = "https://jkpbhxssymkkfxpgvnub.supabase.co";
+const SUPABASE_KEY = "sb_publishable_xuSwvSsFcmuA7jKMK2KsZw_2eJjSaEz";
+const API_ENDPOINT = "/.netlify/functions/claude";
+const CALL_URL = "https://coachsaifeddine.systeme.io/call20min";
+
+// ═══════════════════════════════════════════════════
+// STEPS
+// ═══════════════════════════════════════════════════
+const STEPS = ["accueil","email","q1","q2","q3","q4","q5","calcul","resultat","cta","confirmation"];
+const STEP_LABELS = {accueil:"Accueil",email:"Contact",q1:"Blocage",q2:"Mental",q3:"Finances",q4:"Profil",q5:"Situation",calcul:"Analyse",resultat:"Résultat",cta:"Prochaine étape",confirmation:"Confirmé"};
+
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let STATE = {
+  step: "accueil",
+  sessionId: null,
+  data: {},
+  stoppeur: null,
+  urgence: "normale",
+  fieldErrors: {}
+};
+
+// ═══════════════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════════════
+async function sbSave() {
+  if (!STATE.sessionId) return;
+  const d = STATE.data;
+  try {
+    await fetch(SUPABASE_URL + "/rest/v1/diagnostics", {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_KEY,
+        "Authorization": "Bearer " + SUPABASE_KEY,
+        "Content-Type": "application/json",
+        "Prefer": "resolution=merge-duplicates"
+      },
+      body: JSON.stringify({
+        id: STATE.sessionId,
+        email: d.email || "",
+        prenom: d.prenom || "",
+        nom: d.nom || "",
+        entreprise: d.entreprise || "",
+        step_actuel: STATE.step,
+        data_json: STATE.data,
+        stoppeur: STATE.stoppeur?.nom || null,
+        statut_suivi: "nouveau",
+        source: "eclair",
+        updated_at: new Date().toISOString()
+      })
+    });
+  } catch(e) { console.error("Supabase:", e); }
+}
+
+// ═══════════════════════════════════════════════════
+// MATRICE ISD™ — basée sur Q1 (blocage) × Q2 (mental)
+// ═══════════════════════════════════════════════════
+const STOPPEURS = {
+  // Q1=A (pas assez prospects)
+  "A-A": { nom: "Invisibilité structurelle", sprint: "Sprint 30™ Leads",
+    description: "Vous êtes actif mais invisible. Le marché ne vous trouve pas parce que votre système d'acquisition n'existe pas encore — vous dépendez du hasard et du bouche-à-oreille.",
+    insights: ["Votre problème n'est pas le contenu — c'est l'absence d'un mécanisme qui convertit ce contenu en rendez-vous qualifiés.", "Les entrepreneurs qui remplissent leur pipeline ne travaillent pas plus que vous — ils ont un système, pas une espérance.", "Un système d'acquisition tourne même quand vous livrez, dormez ou partez en vacances."]
+  },
+  "A-B": { nom: "Offre non positionnée + Acquisition faible", sprint: "Sprint 30™ Leads",
+    description: "Vous manquez de prospects ET vous doutez de votre offre. Ces deux blocages se renforcent mutuellement — l'un justifie l'autre dans votre tête.",
+    insights: ["Le doute sur l'offre est souvent un symptôme, pas une cause — vous ne savez pas si elle fonctionne parce qu'elle n'est pas assez testée.", "Clarifier le positionnement de l'offre et construire l'acquisition sont le même travail — pas deux projets séparés.", "Une offre imparfaite vendue à 20 personnes vous apprend plus que l'offre parfaite jamais présentée."]
+  },
+  "A-C": { nom: "Dispersion = Acquisition impossible", sprint: "Sprint 30™ Leads",
+    description: "Vous avez trop d'idées et pas assez de focus. L'acquisition souffre directement de votre incapacité à prioriser un seul canal et une seule promesse.",
+    insights: ["La dispersion est le premier destructeur de pipeline — chaque nouveau projet relance le compteur à zéro.", "Vous n'avez pas besoin de plus d'idées — vous avez besoin de choisir une et d'aller jusqu'au bout.", "Un seul canal maîtrisé génère plus que cinq canaux amorcés."]
+  },
+  "A-D": { nom: "Founder Bottleneck + Invisibilité", sprint: "Sprint 30™ Leads",
+    description: "Vous savez exactement quoi faire mais vous ne le faites pas. L'acquisition est votre priorité déclarée mais pas votre priorité réelle.",
+    insights: ["Savoir sans faire est plus douloureux que ne pas savoir — vous avez le diagnostic mais pas encore le système.", "Le gap entre savoir et faire se comble rarement avec plus d'informations — il se comble avec de la contrainte externe.", "Votre stoppeur n'est pas l'acquisition — c'est l'exécution consistante."]
+  },
+  "A-E": { nom: "Mauvais timing marché ou positionnement décalé", sprint: "Sprint 90™",
+    description: "Vous pensez que le marché n'est pas prêt — mais c'est souvent un signal que le positionnement n'est pas encore au bon endroit.",
+    insights: ["Le marché est rarement 'pas prêt' — il est souvent 'pas convaincu par ce qui lui est proposé'.", "La question n'est pas 'le marché veut-il ce produit ?' mais 'à qui exactement, avec quelle promesse précise ?'", "Un repositionnement de niche peut transformer un marché 'pas prêt' en marché 'affamé'."]
+  },
+  // Q1=B (prospects mais pas de conversion)
+  "B-A": { nom: "Blocage closing — Promesse floue", sprint: "Sprint 30™ Conversion",
+    description: "Vous avez des prospects mais ils ne signent pas. Le problème vient de la clarté de votre promesse et de votre processus de closing.",
+    insights: ["Votre offre n'est pas le problème — c'est le moment et la manière dont vous la présentez qui bloquent la décision.", "Le closing n'est pas de la manipulation — c'est aider quelqu'un à prendre une décision qu'il veut déjà prendre.", "Une promesse mesurable et spécifique convertit 3x plus qu'une promesse générique, à offre identique."]
+  },
+  "B-B": { nom: "Offre floue + Conversion faible", sprint: "Sprint 30™ Conversion",
+    description: "Votre offre n'est pas encore claire dans votre tête — et ça se sent dans vos conversations. Vos prospects le ressentent avant même que vous le verbalisiez.",
+    insights: ["La confusion du vendeur devient instantanément la confusion de l'acheteur.", "Clarifier votre offre n'est pas un travail de marketing — c'est un travail de compréhension de votre propre valeur.", "Une offre qui ne se vend pas est une offre qui n'est pas encore traduite dans le langage du problème client."]
+  },
+  "B-C": { nom: "Stop-and-go — Closing non systématisé", sprint: "Sprint 30™ Conversion",
+    description: "Vous convertissez parfois mais sans régularité. Trop d'idées en parallèle vous empêchent de maîtriser et de répéter ce qui fonctionne.",
+    insights: ["Vous avez probablement déjà fermé des deals — mais vous ne savez pas exactement pourquoi ça a fonctionné.", "La régularité en vente vient d'un process répétable, pas d'une inspiration variable.", "Choisir UN script de closing et le maîtriser vaut mieux que d'improviser avec dix approches différentes."]
+  },
+  "B-D": { nom: "Exécution closing — Résistance interne", sprint: "Sprint 30™ Conversion",
+    description: "Vous savez comment closer mais vous évitez le moment du closing. Cette résistance est le vrai stoppeur — pas la compétence.",
+    insights: ["Savoir fermer et fermer sont deux compétences différentes — l'une est intellectuelle, l'autre est émotionnelle.", "La résistance au closing est presque toujours liée à la peur du rejet, pas à un manque de technique.", "Chaque closing évité est une décision prise à la place de votre prospect — ce n'est pas lui rendre service."]
+  },
+  "B-E": { nom: "Mismatch offre-marché", sprint: "Sprint 90™",
+    description: "Vos prospects entrent mais ne signent pas parce que l'offre ne correspond pas exactement à ce que le marché cherche à acheter.",
+    insights: ["Si les prospects écoutent mais n'achètent pas, le problème est dans le gap entre ce que vous proposez et ce qu'ils veulent payer.", "Le marché n'achète pas ce qui est bon — il achète ce qui résout un problème qu'il reconnaît comme urgent.", "Repositionner l'offre sur le problème le plus douloureux de votre ICP peut transformer votre taux de conversion sans changer l'offre elle-même."]
+  },
+  // Q1=C (pas de récurrence)
+  "C-A": { nom: "Absence de parcours client post-achat", sprint: "Sprint 30™ Fréquence",
+    description: "Vos clients achètent une fois et disparaissent parce qu'il n'y a pas de prochaine étape évidente après la livraison.",
+    insights: ["Acquérir un nouveau client coûte 5 à 7 fois plus cher que de faire racheter un client existant.", "Vos clients ne partent pas parce qu'ils sont insatisfaits — ils partent parce qu'il n'y a pas de prochaine étape évidente.", "Un parcours client n'est pas du upsell agressif — c'est une séquence de valeur qui crée naturellement l'envie de continuer."]
+  },
+  "C-D": { nom: "Fidélisation manquante — Exécution reportée", sprint: "Sprint 30™ Fréquence",
+    description: "Vous savez qu'il faut créer de la récurrence mais vous ne l'avez pas encore mis en place. Ce report coûte chaque mois.",
+    insights: ["Chaque mois sans offre récurrente est un mois de revenus prévisibles non générés.", "La récurrence ne se crée pas avec plus de valeur — elle se crée avec une prochaine étape claire proposée au bon moment.", "Le meilleur moment pour proposer la prochaine offre est pendant la livraison de la première."]
+  },
+  "C-C": { nom: "Dispersion — Pas de système de fidélisation", sprint: "Sprint 30™ Fréquence",
+    description: "Vous avez trop de projets pour construire un vrai parcours client. La fidélisation reste une intention, jamais une priorité.",
+    insights: ["Un client fidélisé est votre actif le plus sous-exploité.", "La fidélisation ne demande pas plus de travail — elle demande de la structure et du timing.", "Choisir un seul mécanisme de récurrence et le déployer vaut plus que d'en planifier dix."]
+  },
+  // Q1=D (cash manque)
+  "D-A": { nom: "Fuite trésorerie — Modèle non optimisé", sprint: "Sprint 90™",
+    description: "Vous encaissez mais le cash ne reste pas. Le problème est dans la structure de vos marges, de vos coûts ou de vos délais de paiement.",
+    insights: ["Un problème de trésorerie se règle souvent sans trouver de nouveaux clients — en optimisant ce qui existe déjà.", "Les marges ne se défendent pas — elles se construisent par des décisions de positionnement et de pricing.", "Réduire les délais de paiement de 30 jours peut transformer votre trésorerie sans changer un seul euro de CA."]
+  },
+  "D-D": { nom: "Dilution marges + Exécution bloquée", sprint: "Sprint 90™",
+    description: "Vous savez exactement quoi faire pour améliorer vos marges mais vous ne l'avez pas encore fait. Chaque semaine de report a un coût réel.",
+    insights: ["Plus vous livrez seul sans restructurer, plus vous plafonnez — votre revenu est limité par vos heures, pas par votre valeur.", "Le problème n'est pas votre prix — c'est votre modèle : vous vendez du temps alors que vous devriez vendre des résultats.", "La restructuration des marges commence par une seule décision : identifier ce que vous seul pouvez faire."]
+  },
+  // Q1=E (je tourne en rond)
+  "E-C": { nom: "Virus du Plus — Dispersion totale", sprint: "Sprint 30™ Leads",
+    description: "Vous avez trop d'idées, trop de projets, trop de directions. Cette dispersion est votre stoppeur dominant — elle paralyse tout le reste.",
+    insights: ["Le Virus du Plus est le stoppeur le plus insidieux — il ressemble à de l'ambition mais produit de l'immobilisme.", "Votre problème n'est pas de trouver la bonne idée — c'est d'éliminer les mauvaises assez vite pour libérer le focus.", "Un seul focus exécuté à 80% surpasse cinq projets exécutés à 20%."]
+  },
+  "E-D": { nom: "Clarté manquante — Exécution bloquée", sprint: "Sprint 30™ Leads",
+    description: "Vous savez quoi faire mais vous tournez en rond. Le problème n'est pas l'information — c'est la décision de prioriser et de s'y tenir.",
+    insights: ["Vous n'avez pas besoin de plus de clarté pour démarrer — vous avez besoin de démarrer pour obtenir de la clarté.", "Tourner en rond avec une bonne stratégie est plus épuisant qu'avancer avec une stratégie imparfaite.", "La prochaine étape n'est pas de tout comprendre — c'est de choisir une contrainte et de la lever."]
+  },
+  "E-A": { nom: "Manque de visibilité + Confusion de direction", sprint: "Sprint 30™ Leads",
+    description: "Vous cherchez de la visibilité mais sans direction claire. Ces deux blocages se nourrissent l'un l'autre.",
+    insights: ["La visibilité sans positionnement clair attire les mauvais prospects autant que les bons.", "Avant de chercher à être vu, il faut décider précisément par qui et pour quoi.", "Un positionnement tranchant attire moins de monde — mais exactement les bonnes personnes."]
+  },
+};
+
+// Fallback si combinaison non trouvée
+function getStoppeur(q1, q2) {
+  const key = q1 + "-" + q2;
+  if (STOPPEURS[key]) return STOPPEURS[key];
+  // Fallback par Q1
+  const fallbacks = {
+    "A": STOPPEURS["A-A"], "B": STOPPEURS["B-A"],
+    "C": STOPPEURS["C-A"], "D": STOPPEURS["D-A"], "E": STOPPEURS["E-D"]
+  };
+  return fallbacks[q1] || STOPPEURS["A-A"];
+}
+
+function calculeUrgence(q3) {
+  if (q3 === "A") return "critique";
+  if (q3 === "B") return "haute";
+  return "normale";
+}
+
+// ═══════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════
+function goTo(step) {
+  STATE.step = step;
+  STATE.fieldErrors = {};
+  updateProgress();
+  render();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function goNext() {
+  const idx = STEPS.indexOf(STATE.step);
+
+  // Validation email
+  if (STATE.step === "email") {
+    const errs = {};
+    if (!STATE.data.email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(STATE.data.email)) errs.email = "Email valide requis";
+    if (!STATE.data.prenom?.trim()) errs.prenom = "Prénom requis";
+    if (Object.keys(errs).length > 0) { STATE.fieldErrors = errs; render(); return; }
+    if (!STATE.sessionId) {
+      STATE.sessionId = "eclair_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
+    }
+    sbSave();
+  }
+
+  // Validation questions choix
+  if (["q1","q2","q3","q4"].includes(STATE.step)) {
+    if (!STATE.data[STATE.step]) {
+      STATE.fieldErrors[STATE.step] = "Veuillez sélectionner une réponse";
+      render(); return;
+    }
+  }
+
+  // Validation Q5 texte libre
+  if (STATE.step === "q5") {
+    if (!STATE.data.q5?.trim() || STATE.data.q5.trim().length < 10) {
+      STATE.fieldErrors.q5 = "Décrivez votre situation en au moins quelques mots";
+      render(); return;
+    }
+    // Calculer stoppeur
+    STATE.stoppeur = getStoppeur(STATE.data.q1, STATE.data.q2);
+    STATE.urgence = calculeUrgence(STATE.data.q3);
+    sbSave();
+    goTo("calcul");
+    setTimeout(() => goTo("resultat"), 3000);
+    return;
+  }
+
+  goTo(STEPS[idx+1]);
+}
+
+function goBack() {
+  const idx = STEPS.indexOf(STATE.step);
+  if (idx > 1) goTo(STEPS[idx-1]);
+}
+
+function setChoice(key, value) {
+  STATE.data[key] = value;
+  STATE.fieldErrors = {};
+  render();
+}
+
+// ═══════════════════════════════════════════════════
+// PROGRESS
+// ═══════════════════════════════════════════════════
+function updateProgress() {
+  const pb = document.getElementById('progressbar');
+  const questionSteps = ["email","q1","q2","q3","q4","q5"];
+  if (!questionSteps.includes(STATE.step)) { pb.classList.add('hidden'); return; }
+  pb.classList.remove('hidden');
+  const idx = questionSteps.indexOf(STATE.step);
+  const pct = Math.round(((idx+1)/questionSteps.length)*100);
+  document.getElementById('progress-fill').style.width = pct+'%';
+  document.getElementById('progress-pct').textContent = pct+'%';
+  document.getElementById('progress-label').textContent = STEP_LABELS[STATE.step]||'';
+}
+
+// ═══════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════
+function choiceGroup(key, options) {
+  const selected = STATE.data[key]||"";
+  const err = STATE.fieldErrors[key]||"";
+  const wrap = document.createElement('div');
+  if(err){ const e=document.createElement('div');e.style.cssText="color:var(--red);font-size:12px;margin-bottom:12px;padding:8px 12px;background:#C0392B15;border-radius:6px";e.textContent="⚠ Veuillez sélectionner une réponse";wrap.appendChild(e); }
+  options.forEach(({value, label, sub}) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-card' + (selected===value?' selected':'');
+    btn.innerHTML = `<div class="choice-label">${label}</div>${sub?`<div class="choice-sub">${sub}</div>`:''}`;
+    btn.onclick = () => setChoice(key, value);
+    wrap.appendChild(btn);
+  });
+  return wrap;
+}
+
+function inputField(label, key, opts={}) {
+  const val = STATE.data[key]||"";
+  const err = STATE.fieldErrors[key]||"";
+  const wrap = document.createElement('div');
+  wrap.className='field-wrap';
+  if(label){ const lbl=document.createElement('label');lbl.innerHTML=label+` <span style="color:var(--gold)">*</span>`;wrap.appendChild(lbl); }
+  const inp = document.createElement('input');
+  inp.type=opts.type||"text";inp.value=val;inp.placeholder=opts.placeholder||"";
+  if(err) inp.classList.add('error');
+  inp.oninput=()=>{STATE.data[key]=inp.value;STATE.fieldErrors[key]="";};
+  wrap.appendChild(inp);
+  if(err){const e=document.createElement('div');e.className='field-error';e.textContent="⚠ "+err;wrap.appendChild(e);}
+  return wrap;
+}
+
+function navBtns(showBack=true, nextLabel="Continuer →") {
+  const div=document.createElement('div');div.className='nav-btns';
+  if(showBack){const back=document.createElement('button');back.className='ghost-btn';back.textContent='← Retour';back.onclick=goBack;div.appendChild(back);}
+  const next=document.createElement('button');next.className='gold-btn';next.style.flex='1';next.textContent=nextLabel;next.onclick=goNext;
+  div.appendChild(next);
+  return div;
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE RENDERERS
+// ═══════════════════════════════════════════════════
+
+function renderAccueil() {
+  const wrap=document.createElement('div');wrap.className='page';
+  wrap.style.cssText="min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:32px 20px";
+  const inner=document.createElement('div');inner.style.maxWidth="560px";
+  inner.innerHTML=`
+    <div style="text-align:center;margin-bottom:36px">
+      <div style="font-size:44px;margin-bottom:16px">⬡</div>
+      <h1 style="color:var(--gold);font-size:1.9rem;margin-bottom:14px;line-height:1.2">Diagnostic Éclair ISD™</h1>
+      <p style="color:var(--muted);font-size:15px;line-height:1.8">Réponds à ces 5 questions en 60 secondes.<br>Dans les 24h, tu reçois un diagnostic personnalisé<br>qui identifie ton stoppeur dominant.</p>
+    </div>
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        ${[["⚡","60 secondes","5 questions ciblées"],["🎯","Stoppeur précis","Le seul blocage qui compte"],["📋","Plan concret","Prochaine étape identifiée"],["🔒","Confidentiel","Usage exclusif Architecte CR™"]].map(([ico,t,d])=>`
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="font-size:20px">${ico}</span>
+            <div><div style="font-size:13px;font-weight:700;color:var(--text)">${t}</div><div style="font-size:11px;color:var(--muted)">${d}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+    <div style="background:#C9A84C0a;border:1px solid #C9A84C22;border-radius:8px;padding:12px 16px;margin-bottom:24px">
+      <p style="font-size:12px;color:var(--muted);line-height:1.7;font-style:italic">▸ Confidentiel · Usage exclusif Architecte de Clarté Rentable™</p>
+    </div>`;
+  const btn=document.createElement('button');btn.className='gold-btn';btn.style.cssText="font-size:15px;padding:14px";btn.textContent="Démarrer le diagnostic →";btn.onclick=goNext;
+  inner.appendChild(btn);wrap.appendChild(inner);
+  return wrap;
+}
+
+function renderEmail() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`
+    <h2 style="color:var(--gold);margin-bottom:6px">À qui envoyer le diagnostic ?</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:24px;line-height:1.7">Votre diagnostic personnalisé sera envoyé à cette adresse sous 24h.</p>`;
+  div.appendChild(inputField("Prénom","prenom",{placeholder:"Votre prénom"}));
+  div.appendChild(inputField("Email","email",{type:"email",placeholder:"votre@email.com"}));
+  const optWrap=document.createElement('div');optWrap.className='field-wrap';
+  const optLbl=document.createElement('label');optLbl.textContent="Entreprise / Activité (optionnel)";
+  const optInp=document.createElement('input');optInp.value=STATE.data.entreprise||"";optInp.placeholder="Ex : Cabinet Conseil, Coaching XYZ…";
+  optInp.oninput=()=>STATE.data.entreprise=optInp.value;
+  optWrap.appendChild(optLbl);optWrap.appendChild(optInp);
+  div.appendChild(optWrap);
+  div.appendChild(navBtns(false));
+  return div;
+}
+
+function renderQ1() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`
+    <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Question 1 / 5</div>
+    <h2 style="color:var(--gold);margin-bottom:8px;font-size:1.4rem">Si tu devais pointer UN seul blocage dans ton business en ce moment — lequel correspond le mieux ?</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Choisis la réponse qui te parle le plus — même si aucune n'est parfaitement exacte.</p>`;
+  div.appendChild(choiceGroup("q1",[
+    {value:"A",label:"A — Je n'ai pas assez de prospects / de visibilité"},
+    {value:"B",label:"B — J'ai des prospects mais ils ne signent pas / je n'arrive pas à convertir"},
+    {value:"C",label:"C — Mes clients ne restent pas / ne reviennent pas / n'achètent pas à nouveau"},
+    {value:"D",label:"D — Mon chiffre d'affaires ne se transforme pas en trésorerie — le cash manque"},
+    {value:"E",label:"E — Je tourne en rond — je ne sais pas exactement où est le vrai problème"},
+  ]));
+  div.appendChild(navBtns());
+  return div;
+}
+
+function renderQ2() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`
+    <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Question 2 / 5</div>
+    <h2 style="color:var(--gold);margin-bottom:8px;font-size:1.4rem">Quand tu penses à ce blocage — quelle pensée revient le plus souvent ?</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Sois honnête. La réponse D est la plus courante — et la plus utile pour le diagnostic.</p>`;
+  div.appendChild(choiceGroup("q2",[
+    {value:"A",label:"A — \"Si j'avais plus de visibilité, tout irait mieux\""},
+    {value:"B",label:"B — \"Mon offre n'est pas encore assez claire ou assez bonne pour être vendue\""},
+    {value:"C",label:"C — \"Je ne sais pas quoi prioriser — j'ai trop d'idées en même temps\""},
+    {value:"D",label:"D — \"Je sais exactement quoi faire mais je ne le fais pas\""},
+    {value:"E",label:"E — \"Le marché n'est pas encore prêt pour ce que je propose\""},
+  ]));
+  div.appendChild(navBtns());
+  return div;
+}
+
+function renderQ3() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`
+    <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Question 3 / 5</div>
+    <h2 style="color:var(--gold);margin-bottom:8px;font-size:1.4rem">En ce moment, comment tu décrirais ta situation financière business ?</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Cette réponse détermine la vitesse à laquelle je te retourne ton diagnostic.</p>`;
+  div.appendChild(choiceGroup("q3",[
+    {value:"A",label:"A — Critique",sub:"J'ai besoin de résultats dans les 30 prochains jours"},
+    {value:"B",label:"B — Tendue",sub:"Ça tient mais il faut que ça débloque rapidement"},
+    {value:"C",label:"C — Stable",sub:"J'ai de la marge mais je veux accélérer"},
+    {value:"D",label:"D — Confortable",sub:"C'est une démarche de croissance, pas d'urgence"},
+  ]));
+  div.appendChild(navBtns());
+  return div;
+}
+
+function renderQ4() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`
+    <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Question 4 / 5</div>
+    <h2 style="color:var(--gold);margin-bottom:8px;font-size:1.4rem">Ton chiffre d'affaires mensuel actuel se situe autour de :</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">Approximatif suffit. Cette donnée calibre le niveau du diagnostic.</p>`;
+  div.appendChild(choiceGroup("q4",[
+    {value:"A",label:"A — Démarrage",sub:"Moins de 10 000 DHS / mois"},
+    {value:"B",label:"B — En construction",sub:"Entre 10 000 et 50 000 DHS / mois"},
+    {value:"C",label:"C — En croissance",sub:"Entre 50 000 et 150 000 DHS / mois"},
+    {value:"D",label:"D — En plateau",sub:"Plus de 150 000 DHS / mois mais quelque chose bloque"},
+  ]));
+  div.appendChild(navBtns());
+  return div;
+}
+
+function renderQ5() {
+  const div=document.createElement('div');div.className='page';
+  div.innerHTML=`
+    <div style="margin-bottom:6px;font-size:12px;color:var(--muted)">Question 5 / 5</div>
+    <h2 style="color:var(--gold);margin-bottom:8px;font-size:1.4rem">Quel est le problème que tu n'arrives pas à résoudre depuis trop longtemps ?</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:20px">1 à 2 phrases maximum. Écris ce qui te vient naturellement — sans chercher à être précis. C'est cette phrase qui va guider tout le diagnostic personnalisé.</p>`;
+  const err = STATE.fieldErrors.q5||"";
+  const wrap=document.createElement('div');wrap.className='field-wrap';
+  const ta=document.createElement('textarea');ta.rows=4;ta.style.resize="vertical";
+  ta.value=STATE.data.q5||"";
+  ta.placeholder="Ex : Je travaille beaucoup mais les revenus ne suivent pas. Je ne sais pas si c'est mon offre ou ma façon de prospecter qui bloque...";
+  if(err) ta.classList.add('error');
+  ta.oninput=()=>{STATE.data.q5=ta.value;STATE.fieldErrors.q5="";};
+  wrap.appendChild(ta);
+  if(err){const e=document.createElement('div');e.className='field-error';e.textContent="⚠ "+err;wrap.appendChild(e);}
+  div.appendChild(wrap);
+  div.appendChild(navBtns(true,"Voir mon résultat →"));
+  return div;
+}
+
+function renderCalcul() {
+  const div=document.createElement('div');div.className='page';
+  div.style.cssText="min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;text-align:center;padding:40px 20px";
+  div.innerHTML=`
+    <div>
+      <div style="width:60px;height:60px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 24px"></div>
+      <h2 style="color:var(--gold);margin-bottom:12px">Analyse de votre profil…</h2>
+      <p style="color:var(--muted);font-size:14px;line-height:2">Identification du Stoppeur Dominant ISD™<br>Croisement des données comportementales<br>Personnalisation de votre diagnostic</p>
+    </div>`;
+  return div;
+}
+
+function renderResultat() {
+  const div=document.createElement('div');div.className='page';
+  const s=STATE.stoppeur;
+  const prenom=STATE.data.prenom||"";
+  const urgence=STATE.urgence;
+  const closingMsg = urgence==="critique"
+    ? `La situation que vous avez décrite est critique${prenom?", "+prenom:""}. Chaque semaine sans correction aggrave l'écart. Un appel de 20 minutes peut identifier l'action exacte qui change la trajectoire de votre business dans les 30 prochains jours.`
+    : urgence==="haute"
+    ? `Ce stoppeur coûte chaque semaine des opportunités que vous ne récupérerez pas. Le moment d'agir, c'est maintenant.`
+    : `Ce n'est pas un problème de motivation. Ce n'est pas un manque de compétences. C'est une séquence mal ordonnée. Et ça se corrige.`;
+
+  div.innerHTML=`
+    <div style="text-align:center;margin-bottom:28px">
+      ${prenom?`<p style="color:var(--muted);font-size:13px;margin-bottom:8px">Votre diagnostic, <strong style="color:var(--text)">${prenom}</strong> :</p>`:""}
+      <h2 style="color:var(--gold);font-size:1.5rem;margin-bottom:16px">Stoppeur Dominant ISD™</h2>
+      <div style="display:inline-block;background:#C0392B15;border:2px solid #C0392B55;border-radius:12px;padding:14px 24px;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--red);font-weight:700;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">⚠ Stoppeur identifié</div>
+        <div style="font-size:17px;font-weight:700;color:var(--text)">${s.nom}</div>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-top:10px;padding:0 4px">${s.description}</p>
+    </div>
+    <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px">
+      <div style="font-size:12px;color:var(--gold);font-weight:700;margin-bottom:14px;text-transform:uppercase;letter-spacing:1px">✦ 3 Insights clés sur votre situation</div>
+      ${s.insights.map((ins,i)=>`
+        <div class="insight-item">
+          <span style="color:var(--gold);font-size:14px;flex-shrink:0;margin-top:2px">${i+1}.</span>
+          <p style="font-size:13px;color:var(--text);line-height:1.7">${ins}</p>
+        </div>`).join('')}
+    </div>
+    <div style="background:#C9A84C0a;border:1px solid #C9A84C33;border-radius:10px;padding:16px;margin-bottom:20px">
+      <p style="font-size:13px;color:var(--text);line-height:1.8;font-style:italic">"${closingMsg}"</p>
+    </div>
+    <div style="text-align:center;margin-bottom:4px">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Sprint recommandé</div>
+      <div style="display:inline-block;background:#27AE6022;border:1px solid #27AE6055;border-radius:8px;padding:8px 20px;font-size:14px;font-weight:700;color:var(--green)">${s.sprint}</div>
+    </div>`;
+  const btn=document.createElement('button');btn.className='gold-btn';btn.style.cssText="margin-top:20px;font-size:15px;padding:14px";
+  btn.textContent="Réserver mon appel de 20 min →";btn.onclick=()=>goTo("cta");
+  div.appendChild(btn);
+  return div;
+}
+
+function renderCTA() {
+  const div=document.createElement('div');div.className='page';
+  div.style.cssText="min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;padding:32px 20px";
+  const inner=document.createElement('div');inner.style.maxWidth="500px";
+  const prenom=STATE.data.prenom||"";
+  const urgence=STATE.urgence;
+  const lines = urgence==="critique"
+    ? [`${prenom?prenom+", la":"La"} situation que vous avez décrite est critique.`,"","Je ne dis pas ça pour créer de la pression — c'est ce que votre diagnostic révèle.","","Un appel de 20 minutes peut identifier l'action exacte qui change la trajectoire de votre business dans les 30 prochains jours.","","Réservez maintenant. Les créneaux ce mois sont comptés."]
+    : urgence==="haute"
+    ? [`Votre situation est urgente${prenom?", "+prenom:""}.`,"","Chaque semaine sans correction vous coûte des opportunités réelles.","","Cet appel de 20 minutes est la décision la plus rentable que vous puissiez prendre aujourd'hui."]
+    : [`${prenom?"Votre diagnostic est prêt, "+prenom+".":"Votre diagnostic est prêt."}`,""," Un appel. Une clarté. Une décision.","","Pas de présentation commerciale. Pas de pitch interminable. Pas d'engagement forcé.","","Si ce que vous avez lu fait sens — on regarde ensemble si je peux vous aider."];
+
+  inner.innerHTML=`
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:36px;margin-bottom:12px">⬡</div>
+      <h2 style="color:var(--gold);font-size:1.5rem;margin-bottom:20px">Un appel. Une clarté.<br>Une décision.</h2>
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:left">
+        ${lines.map(l=>l?`<p style="font-size:14px;color:var(--text);line-height:1.8;margin-bottom:6px">${l}</p>`:'<br>').join('')}
+      </div>
+    </div>`;
+  const btn=document.createElement('button');btn.className='gold-btn';btn.style.cssText="font-size:15px;padding:16px;margin-bottom:10px";
+  btn.textContent="Réserver mon appel de 20 min →";
+  btn.onclick=()=>{window.open(CALL_URL,'_blank');goTo("confirmation");};
+  const note=document.createElement('p');note.style.cssText="text-align:center;font-size:12px;color:var(--muted)";
+  note.textContent="Gratuit — 20 minutes — Sans engagement";
+  inner.appendChild(btn);inner.appendChild(note);
+  div.appendChild(inner);
+  return div;
+}
+
+function renderConfirmation() {
+  const div=document.createElement('div');div.className='page';
+  div.style.cssText="min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;padding:32px 20px";
+  const inner=document.createElement('div');inner.style.maxWidth="480px";
+  const prenom=STATE.data.prenom||"";
+  inner.innerHTML=`
+    <div style="text-align:center">
+      <div style="width:64px;height:64px;border-radius:50%;background:#27AE6022;border:2px solid #27AE6055;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px">✓</div>
+      <h2 style="color:var(--green);margin-bottom:12px">C'est confirmé${prenom?", "+prenom:""} !</h2>
+      <p style="color:var(--muted);font-size:14px;line-height:1.8;margin-bottom:24px">Votre diagnostic personnalisé vous sera envoyé par email à <strong style="color:var(--text)">${STATE.data.email||""}</strong> sous 24h.</p>
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:left;margin-bottom:20px">
+        <p style="font-size:13px;color:var(--gold);font-weight:700;margin-bottom:10px">📋 En attendant notre appel :</p>
+        <p style="font-size:13px;color:var(--text);line-height:1.8">Notez en une phrase ce que vous voulez débloquer lors de cet appel.<br><br><strong>C'est exactement là que nous commencerons.</strong></p>
+      </div>
+      <div style="background:#27AE6015;border:1px solid #27AE6033;border-radius:8px;padding:12px 16px;margin-bottom:20px">
+        <p style="font-size:13px;color:var(--green)">📅 Vérifiez votre email de confirmation pour les détails de votre appel.</p>
+      </div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">À très bientôt,<br><strong style="color:var(--gold)">Saifeddine — Architecte de Clarté Rentable™</strong></p>
+    </div>`;
+  div.appendChild(inner);
+  return div;
+}
+
+// ═══════════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════════
+function render() {
+  const content=document.getElementById('content');
+  let page;
+  switch(STATE.step) {
+    case "accueil":      page=renderAccueil(); break;
+    case "email":        page=renderEmail(); break;
+    case "q1":           page=renderQ1(); break;
+    case "q2":           page=renderQ2(); break;
+    case "q3":           page=renderQ3(); break;
+    case "q4":           page=renderQ4(); break;
+    case "q5":           page=renderQ5(); break;
+    case "calcul":       page=renderCalcul(); break;
+    case "resultat":     page=renderResultat(); break;
+    case "cta":          page=renderCTA(); break;
+    case "confirmation": page=renderConfirmation(); break;
+    default:             page=document.createElement('div');
+  }
+  content.innerHTML='';
+  content.appendChild(page);
+  updateProgress();
+}
+
+render();
+</script>
+</body>
+</html>
