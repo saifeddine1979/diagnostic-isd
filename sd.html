@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Diagnostic Séquence Dominante™ — ISD</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080810;color:#F5F0E8;font-family:'DM Sans',sans-serif;min-height:100vh}
+:root{--gold:#C9A84C;--dark:#080810;--dark2:#0F0F1A;--border:#2A2A3A;--text:#F5F0E8;--muted:#8A8A9A;--red:#C0392B;--green:#27AE60;--orange:#E67E22}
+input,textarea,select{background:var(--dark2);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:13px;width:100%;outline:none;transition:border .2s}
+input:focus,textarea:focus,select:focus{border-color:var(--gold)}
+button{cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;border:none;border-radius:6px;transition:all .2s}
+h1,h2,h3{font-family:'DM Serif Display',serif}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:var(--dark2)}::-webkit-scrollbar-thumb{background:#C9A84C44;border-radius:4px}
+.gold-btn{background:var(--gold);color:var(--dark);padding:9px 18px;font-size:13px;font-weight:600;border-radius:6px;border:none}
+.gold-btn:hover{opacity:.9}
+.ghost-btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 16px;font-size:13px;border-radius:6px}
+.ghost-btn:hover{border-color:var(--gold);color:var(--gold)}
+.hidden{display:none!important}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.page{animation:fadeInUp .3s ease}
+.saving-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--gold);animation:pulse 1.5s infinite}
+
+/* LAYOUT */
+#topbar{background:var(--dark2);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-shrink:0}
+#app{display:flex;height:calc(100vh - 48px);overflow:hidden}
+#sidebar{width:250px;background:var(--dark2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+#main{flex:1;overflow-y:auto;padding:24px 28px 80px}
+
+/* SIDEBAR */
+.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);background:#C9A84C08}
+.client-pill{padding:9px 12px;border-radius:7px;cursor:pointer;margin:3px 7px;transition:all .2s;font-size:12px;border:1px solid transparent}
+.client-pill:hover{background:#C9A84C15;border-color:#C9A84C33}
+.client-pill.active{background:#C9A84C22;border-color:#C9A84C55}
+.client-pill .cname{font-weight:600;color:var(--text);font-size:13px}
+.client-pill .cmeta{font-size:10px;color:var(--muted);margin-top:2px}
+.pilier-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .2s;margin:2px 6px}
+.pilier-item:hover{background:var(--border);color:var(--text)}
+.pilier-item.active{background:#C9A84C22;color:var(--gold);font-weight:600}
+.pilier-item .sbadge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;flex-shrink:0}
+.nav-sep{height:1px;background:var(--border);margin:8px 0}
+
+/* QUESTION BLOCKS */
+.q-block{background:var(--dark2);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:14px;transition:border .2s}
+.q-block:focus-within{border-color:#C9A84C44}
+.q-num{font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px}
+.q-text{font-size:14px;font-weight:600;color:var(--text);line-height:1.5;margin-bottom:6px}
+.q-help{font-size:12px;color:var(--muted);font-style:italic;margin-bottom:10px;line-height:1.6;padding:6px 10px;background:#C9A84C08;border-left:2px solid #C9A84C44;border-radius:0 4px 4px 0}
+.sec-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin:22px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* TABLEAUX DE SAISIE */
+.input-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+.input-table th{background:#1A1A2A;color:var(--gold);padding:7px 10px;text-align:left;font-weight:600;font-size:11px;border:1px solid var(--border)}
+.input-table td{padding:4px 6px;border:1px solid var(--border);vertical-align:middle}
+.input-table td input,.input-table td select{font-size:12px;padding:5px 8px;background:#0F0F1A}
+.input-table td textarea{font-size:12px;padding:5px 8px;background:#0F0F1A;resize:vertical;min-height:40px}
+.input-table tr:nth-child(even) td{background:#0D0D18}
+
+/* CASES À COCHER */
+.check-grid{display:grid;gap:6px;margin-top:8px}
+.check-grid-2{grid-template-columns:1fr 1fr}
+.check-grid-3{grid-template-columns:1fr 1fr 1fr}
+.check-item{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;background:var(--dark);border:1px solid var(--border);border-radius:6px;cursor:pointer;transition:all .2s;font-size:12px;color:var(--text);line-height:1.5}
+.check-item:hover{border-color:#C9A84C44;background:#C9A84C08}
+.check-item.checked{border-color:#C9A84C88;background:#C9A84C12;color:var(--gold)}
+.check-item input[type=checkbox]{flex-shrink:0;width:14px;height:14px;accent-color:var(--gold);margin-top:1px}
+.check-item label{cursor:pointer;flex:1}
+
+/* CHAMPS SIMPLES */
+.field-row{display:grid;gap:10px;margin-top:8px}
+.field-row-2{grid-template-columns:1fr 1fr}
+.field-row-3{grid-template-columns:1fr 1fr 1fr}
+.field-row-4{grid-template-columns:1fr 1fr 1fr 1fr}
+.field-unit{display:flex;flex-direction:column;gap:4px}
+.field-unit label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+
+/* SCORING */
+.scoring-block{background:#C9A84C08;border:1px solid #C9A84C33;border-radius:10px;padding:18px;margin-top:20px}
+.scoring-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px}
+.scoring-table th{background:#1A1A2A;color:var(--gold);padding:7px 10px;text-align:left;font-size:11px;border:1px solid #C9A84C22}
+.scoring-table td{padding:8px 10px;border:1px solid #2A2A3A;vertical-align:middle}
+.scoring-table tr:nth-child(even) td{background:#0D0D18}
+.scoring-table .barème{font-size:11px;color:var(--muted);font-style:italic}
+.scoring-table input[type=number]{width:60px;text-align:center}
+
+/* MODAL */
+.modal-ov{position:fixed;inset:0;background:#000d;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:var(--dark2);border:1px solid var(--border);border-radius:12px;width:100%;max-width:480px;overflow:hidden;animation:fadeInUp .25s ease}
+
+/* RAPPORT OVERLAY */
+.rapport-ov{position:fixed;inset:0;background:#000f;z-index:400;display:flex;flex-direction:column;overflow:hidden}
+.rapport-hdr{background:var(--dark2);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.rapport-body{flex:1;overflow-y:auto;padding:24px}
+.r-section{background:var(--dark);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:14px}
+.r-sec-title{font-size:10px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.r-edit{font-size:13px;resize:vertical;width:100%;background:var(--dark2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px;line-height:1.7}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <span style="color:var(--gold);font-weight:700;font-family:'DM Serif Display',serif;font-size:16px">⬡ Diagnostic Séquence Dominante™</span>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="save-status" style="font-size:11px;color:var(--muted)"></span>
+    <button id="rapport-btn" class="gold-btn hidden" onclick="showRapport()" style="padding:6px 14px;font-size:12px">📄 Générer Rapport</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px">DOSSIERS CLIENTS</div>
+      <button class="gold-btn" onclick="showNewClientModal()" style="width:100%;padding:7px;font-size:12px">+ Nouveau client</button>
+    </div>
+    <div id="client-list" style="padding:6px;flex:1"></div>
+    <div id="pilier-nav" class="hidden" style="border-top:1px solid var(--border);padding:8px">
+      <div style="padding:6px 4px 4px;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">PILIERS</div>
+      <div id="pilier-nav-items"></div>
+    </div>
+  </div>
+  <div id="main"><div id="content"></div></div>
+</div>
+
+<!-- MODAL NOUVEAU CLIENT -->
+<div id="modal-nc" class="modal-ov hidden">
+  <div class="modal-box">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);background:#C9A84C08"><span style="font-weight:700;color:var(--gold)">Nouveau dossier client</span></div>
+    <div style="padding:18px">
+      <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Nom complet *</label><input id="nc-nom" placeholder="Ex : Mohammed Benali"/></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Entreprise / Activité</label><input id="nc-ent" placeholder="Ex : Cabinet Conseil, Coaching…"/></div>
+      <div style="margin-bottom:14px"><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Email</label><input id="nc-email" type="email" placeholder="client@email.com"/></div>
+      <div><label style="font-size:12px;color:var(--muted);display:block;margin-bottom:5px">Objectif Sprint 30J</label><input id="nc-obj" placeholder="Ex : 200 000 DHS/mois en 90 jours"/></div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+      <button class="ghost-btn" onclick="hideModal('modal-nc')">Annuler</button>
+      <button class="gold-btn" onclick="createClient()">Créer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- RAPPORT OVERLAY -->
+<div id="rapport-ov" class="rapport-ov hidden"></div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════
+const SB_URL = "https://jkpbhxssymkkfxpgvnub.supabase.co";
+const SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImprcGJoeHNzeW1ra2Z4cGd2bnViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwOTg0MjAsImV4cCI6MjA4ODY3NDQyMH0.hG-6wRPchKPZVYZB4RB_GjU5m1SXR7x5ykb5w-UveYM";
+const API = "/.netlify/functions/claude";
+
+// ═══════════════════════════════════════════
+// HELPERS UI
+// ═══════════════════════════════════════════
+function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function hideModal(id){document.getElementById(id).classList.add('hidden')}
+function showModal(id){document.getElementById(id).classList.remove('hidden')}
+function setSaveStatus(msg,color='var(--muted)'){const el=document.getElementById('save-status');if(el){el.textContent=msg;el.style.color=color}}
+
+// ═══════════════════════════════════════════
+// SUPABASE
+// ═══════════════════════════════════════════
+async function sb(path,opts={}){
+  try{
+    const r=await fetch(SB_URL+path,{...opts,headers:{"apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Content-Type":"application/json","Prefer":opts.prefer||"",...(opts.headers||{})}});
+    const t=await r.text();
+    return t?JSON.parse(t):null;
+  }catch(e){console.error('SB:',e.message);return null;}
+}
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const S={clients:[],curId:null,curP:'P1',R:{},scores:{},timer:null};
+
+function R(){return S.R[S.curId]||{}}
+function setR(key,val){if(!S.R[S.curId])S.R[S.curId]={};S.R[S.curId][key]=val;autoSave()}
+function getScore(p){return(S.scores[S.curId]||{})[p]}
+function setScore(p,v){if(!S.scores[S.curId])S.scores[S.curId]={};S.scores[S.curId][p]=v;renderPilierNav();autoSave()}
+
+function autoSave(){
+  clearTimeout(S.timer);
+  setSaveStatus('• Modification…','var(--orange)');
+  S.timer=setTimeout(async()=>{
+    await sb('/rest/v1/dsd_clients?id=eq.'+S.curId,{method:'PATCH',body:JSON.stringify({responses:S.R[S.curId]||{},scores:S.scores[S.curId]||{},updated_at:new Date().toISOString()})});
+    setSaveStatus('✓ Sauvegardé','var(--green)');
+  },1800);
+}
+
+// ═══════════════════════════════════════════
+// CLIENTS
+// ═══════════════════════════════════════════
+async function loadClients(){
+  try{
+    const dsd=await sb('/rest/v1/dsd_clients?select=*&order=created_at.desc');
+    const dsdList=Array.isArray(dsd)?dsd:[];
+    const app1=await sb('/rest/v1/diagnostics?select=id,prenom,nom,email,entreprise,score_global,stoppeur,created_at&source=neq.eclair&order=created_at.desc&limit=50');
+    const app1List=Array.isArray(app1)?app1:[];
+    const dsdEmails=new Set(dsdList.map(c=>c.email).filter(Boolean));
+    const dsdIds=new Set(dsdList.map(c=>c.id));
+    const converted=app1List.filter(c=>c.email&&!dsdEmails.has(c.email)&&!dsdIds.has(c.id)).map(c=>({
+      id:c.id,nom:(c.prenom+' '+(c.nom||'')).trim()||c.email,entreprise:c.entreprise||'',
+      email:c.email||'',objectif:'',responses:{},scores:{},from_app1:true,
+      app1_stoppeur:c.stoppeur,app1_score:c.score_global,created_at:c.created_at
+    }));
+    S.clients=[...dsdList,...converted];
+  }catch(e){S.clients=[];}
+  renderClientList();
+}
+
+function renderClientList(){
+  const el=document.getElementById('client-list');
+  if(!S.clients.length){el.innerHTML='<p style="font-size:11px;color:var(--muted);padding:12px;text-align:center">Aucun dossier</p>';return;}
+  el.innerHTML=S.clients.map(c=>`
+    <div class="client-pill ${c.id===S.curId?'active':''}" onclick="selectClient('${c.id}')">
+      <div class="cname">${h(c.nom)}</div>
+      <div class="cmeta">${h(c.entreprise||c.email||'—')}</div>
+      ${c.from_app1?`<div style="font-size:9px;color:var(--orange);margin-top:2px">↳ CR™ · Score ${c.app1_score||'—'}</div>`:''}
+    </div>`).join('');
+}
+
+async function selectClient(id){
+  S.curId=id;S.curP='P1';
+  const c=S.clients.find(x=>x.id===id);
+  if(c&&c.from_app1){
+    const nc={id,nom:c.nom,entreprise:c.entreprise||'',email:c.email||'',objectif:'',responses:{},scores:{},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+    await sb('/rest/v1/dsd_clients',{method:'POST',prefer:'resolution=merge-duplicates',body:JSON.stringify(nc)});
+    c.from_app1=false;S.R[id]={};S.scores[id]={};
+  }else if(!S.R[id]){
+    const d=await sb('/rest/v1/dsd_clients?id=eq.'+id+'&select=responses,scores');
+    if(d&&d[0]){S.R[id]=d[0].responses||{};S.scores[id]=d[0].scores||{};}
+    else{S.R[id]={};S.scores[id]={};}
+  }
+  renderClientList();renderPilierNav();renderPilier(S.curP);
+  document.getElementById('pilier-nav').classList.remove('hidden');
+  document.getElementById('rapport-btn').classList.remove('hidden');
+}
+
+function showNewClientModal(){document.getElementById('nc-nom').value='';document.getElementById('nc-ent').value='';document.getElementById('nc-email').value='';document.getElementById('nc-obj').value='';showModal('modal-nc');setTimeout(()=>document.getElementById('nc-nom').focus(),100)}
+
+async function createClient(){
+  const nom=document.getElementById('nc-nom').value.trim();
+  if(!nom){alert('Nom requis');return;}
+  const c={id:'dsd_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),nom,entreprise:document.getElementById('nc-ent').value.trim(),email:document.getElementById('nc-email').value.trim(),objectif:document.getElementById('nc-obj').value.trim(),responses:{},scores:{},created_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  await sb('/rest/v1/dsd_clients',{method:'POST',body:JSON.stringify(c)});
+  S.clients.unshift(c);S.R[c.id]={};S.scores[c.id]={};
+  hideModal('modal-nc');renderClientList();selectClient(c.id);
+}
+
+// ═══════════════════════════════════════════
+// PILIER NAV
+// ═══════════════════════════════════════════
+const PILIERS_META=[
+  {id:'P1',label:'Acquisition & Marché',color:'#C9A84C'},
+  {id:'P2',label:'Offre & Conversion',color:'#2ECC71'},
+  {id:'P3',label:'Réseau & Recommandations',color:'#3498DB'},
+  {id:'P4',label:'Économie & Monétisation',color:'#E67E22'},
+  {id:'P5',label:'Capacité & Goulot',color:'#9B59B6'},
+  {id:'P6',label:'Finances & Robustesse',color:'#E74C3C'},
+  {id:'P7',label:'Fondateur & Leviers',color:'#1ABC9C'},
+];
+
+function renderPilierNav(){
+  const nav=document.getElementById('pilier-nav-items');
+  nav.innerHTML=PILIERS_META.map(p=>{
+    const sc=getScore(p.id);
+    const hasS=sc!==undefined&&sc!==null;
+    const col=hasS?(sc<4?'var(--red)':sc<7?'var(--orange)':'var(--green)'):'var(--muted)';
+    return `<div class="pilier-item ${p.id===S.curP?'active':''}" onclick="switchPilier('${p.id}')">
+      <span style="width:7px;height:7px;border-radius:50%;background:${p.color};flex-shrink:0;display:inline-block"></span>
+      <span style="flex:1;font-size:11px">${p.id} ${p.label.split(' ')[0]}</span>
+      ${hasS?`<span class="sbadge" style="background:${col}22;color:${col}">${sc.toFixed(1)}</span>`:''}
+    </div>`;
+  }).join('');
+}
+
+function switchPilier(p){S.curP=p;renderPilierNav();renderPilier(p);document.getElementById('main').scrollTo({top:0,behavior:'smooth'})}
+
+// ═══════════════════════════════════════════
+// COMPOSANTS DE SAISIE
+// ═══════════════════════════════════════════
+function makeTextarea(key,placeholder='',rows=3){
+  const ta=document.createElement('textarea');
+  ta.rows=rows;ta.placeholder=placeholder;ta.style.cssText='font-size:13px;resize:vertical;margin-top:8px';
+  ta.value=R()[key]||'';
+  ta.oninput=()=>setR(key,ta.value);
+  return ta;
+}
+
+function makeInput(key,placeholder='',type='text'){
+  const inp=document.createElement('input');
+  inp.type=type;inp.placeholder=placeholder;
+  inp.value=R()[key]||'';
+  inp.oninput=()=>setR(key,inp.value);
+  return inp;
+}
+
+// Tableau multi-colonnes
+function makeTable(key,headers,rows=3){
+  const wrap=document.createElement('div');wrap.style.overflowX='auto';
+  const t=document.createElement('table');t.className='input-table';
+  const thead=document.createElement('thead');
+  const trh=document.createElement('tr');
+  headers.forEach(h=>{const th=document.createElement('th');th.textContent=h;trh.appendChild(th)});
+  thead.appendChild(trh);t.appendChild(thead);
+  const tbody=document.createElement('tbody');
+  const saved=(R()[key])||[];
+  for(let r=0;r<rows;r++){
+    const tr=document.createElement('tr');
+    headers.forEach((_,ci)=>{
+      const td=document.createElement('td');
+      const inp=document.createElement('input');
+      inp.value=(saved[r]&&saved[r][ci])||'';
+      inp.oninput=()=>{
+        const cur=R()[key]||Array.from({length:rows},()=>Array(headers.length).fill(''));
+        if(!cur[r])cur[r]=Array(headers.length).fill('');
+        cur[r][ci]=inp.value;setR(key,cur);
+      };
+      td.appendChild(inp);tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  }
+  t.appendChild(tbody);wrap.appendChild(t);return wrap;
+}
+
+// Cases à cocher
+function makeCheckboxes(key,items,cols=2){
+  const wrap=document.createElement('div');
+  wrap.className=`check-grid check-grid-${cols}`;
+  const saved=R()[key]||[];
+  items.forEach((item,i)=>{
+    const div=document.createElement('div');
+    div.className='check-item'+(saved.includes(i)?' checked':'');
+    const cb=document.createElement('input');cb.type='checkbox';cb.id=key+'_'+i;cb.checked=saved.includes(i);
+    const lbl=document.createElement('label');lbl.htmlFor=key+'_'+i;lbl.textContent=item;
+    cb.onchange=()=>{
+      const cur=R()[key]||[];
+      const idx=cur.indexOf(i);
+      if(cb.checked&&idx===-1)cur.push(i);
+      else if(!cb.checked&&idx!==-1)cur.splice(idx,1);
+      div.className='check-item'+(cb.checked?' checked':'');
+      setR(key,cur);
+    };
+    div.appendChild(cb);div.appendChild(lbl);wrap.appendChild(div);
+  });
+  return wrap;
+}
+
+// Ligne de champs métriques
+function makeFieldRow(fields,cols=3){
+  const wrap=document.createElement('div');
+  wrap.className=`field-row field-row-${cols}`;
+  wrap.style.marginTop='8px';
+  fields.forEach(([key,label,placeholder])=>{
+    const unit=document.createElement('div');unit.className='field-unit';
+    const lbl=document.createElement('label');lbl.textContent=label;
+    const inp=makeInput(key,placeholder||'');
+    unit.appendChild(lbl);unit.appendChild(inp);wrap.appendChild(unit);
+  });
+  return wrap;
+}
+
+// Section title
+function secTitle(text){
+  const d=document.createElement('div');d.className='sec-title';d.textContent=text;return d;
+}
+
+// Question wrapper
+function qBlock(num,text,helpText,buildFn){
+  const d=document.createElement('div');d.className='q-block';
+  d.innerHTML=`<div class="q-num">${num}</div><div class="q-text">${text}</div>${helpText?`<div class="q-help">${helpText}</div>`:''}`;
+  if(buildFn)buildFn(d);
+  return d;
+}
+
+// ═══════════════════════════════════════════
+// SCORING BLOCK
+// ═══════════════════════════════════════════
+function makeScoringBlock(pilierID,criteria){
+  const p=PILIERS_META.find(x=>x.id===pilierID);
+  const wrap=document.createElement('div');wrap.className='scoring-block';
+  wrap.innerHTML=`<div style="font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">📊 SCORING ${pilierID}</div>`;
+  
+  // Tableau critères
+  const t=document.createElement('table');t.className='scoring-table';
+  t.innerHTML=`<thead><tr><th>Critère</th><th style="width:200px">Barème</th><th style="width:80px">Score</th></tr></thead>`;
+  const tbody=document.createElement('tbody');
+  const saved=R()['scoring_'+pilierID]||{};
+  criteria.forEach((cr,i)=>{
+    const tr=document.createElement('tr');
+    const key='sc_'+pilierID+'_'+i;
+    tr.innerHTML=`<td>${cr.label}</td><td class="barème">${cr.bareme}</td>`;
+    const td=document.createElement('td');
+    const inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=cr.max||4;inp.step=0.5;inp.style.cssText='width:60px;text-align:center';
+    inp.value=saved[i]||'';
+    inp.oninput=()=>{
+      const cur=R()['scoring_'+pilierID]||{};
+      cur[i]=parseFloat(inp.value)||0;
+      setR('scoring_'+pilierID,cur);
+      // Recalculer score total
+      const total=Object.values(R()['scoring_'+pilierID]||{}).reduce((a,b)=>a+b,0);
+      const maxTotal=criteria.reduce((a,c)=>a+(c.max||4),0);
+      const score10=Math.round((total/maxTotal)*100)/10;
+      setScore(pilierID,score10);
+      scoreDisplay.textContent=score10.toFixed(1)+'/10';
+    };
+    td.appendChild(inp);tr.appendChild(td);tbody.appendChild(tr);
+  });
+  t.appendChild(tbody);wrap.appendChild(t);
+  
+  // Affichage score total
+  const sc=getScore(pilierID);
+  const scoreDisplay=document.createElement('div');
+  scoreDisplay.style.cssText='font-size:24px;font-weight:700;text-align:center;padding:10px';
+  const col=sc?(sc<4?'var(--red)':sc<7?'var(--orange)':'var(--green)'):'var(--gold)';
+  scoreDisplay.style.color=col;
+  scoreDisplay.textContent=(sc?sc.toFixed(1)+'/10':'—');
+  wrap.appendChild(scoreDisplay);
+  
+  // Commentaire
+  const lbl=document.createElement('div');lbl.style.cssText='font-size:11px;color:var(--muted);margin-bottom:4px';lbl.textContent='Commentaire libre sur ce pilier';
+  const ta=makeTextarea('comment_'+pilierID,'Observations, points clés, intuitions…',2);
+  wrap.appendChild(lbl);wrap.appendChild(ta);
+  return wrap;
+}
+
+// ═══════════════════════════════════════════
+// RENDU DES 7 PILIERS
+// ═══════════════════════════════════════════
+function renderPilier(pid){
+  const c=document.getElementById('content');c.innerHTML='';
+  const client=S.clients.find(x=>x.id===S.curId);
+  const p=PILIERS_META.find(x=>x.id===pid);
+  const wrap=document.createElement('div');wrap.className='page';
+  
+  // Header
+  const hdr=document.createElement('div');
+  hdr.style.cssText='display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:10px';
+  const sc=getScore(pid);
+  const scCol=sc?(sc<4?'var(--red)':sc<7?'var(--orange)':'var(--green)'):'var(--muted)';
+  hdr.innerHTML=`
+    <div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:3px">${pid} · ${client?h(client.nom):''}</div>
+      <h2 style="color:${p.color};font-size:1.4rem">${p.label}</h2>
+      ${client&&client.objectif?`<div style="font-size:11px;color:var(--muted);margin-top:3px">Objectif : ${h(client.objectif)}</div>`:''}
+    </div>
+    ${sc!==undefined?`<div style="text-align:center;padding:8px 16px;background:${scCol}22;border-radius:8px;border:1px solid ${scCol}44"><div style="font-size:20px;font-weight:700;color:${scCol}">${sc.toFixed(1)}</div><div style="font-size:10px;color:var(--muted)">Score</div></div>`:''}`;
+  wrap.appendChild(hdr);
+
+  // Contenu par pilier
+  if(pid==='P1')buildP1(wrap);
+  else if(pid==='P2')buildP2(wrap);
+  else if(pid==='P3')buildP3(wrap);
+  else if(pid==='P4')buildP4(wrap);
+  else if(pid==='P5')buildP5(wrap);
+  else if(pid==='P6')buildP6(wrap);
+  else if(pid==='P7')buildP7(wrap);
+
+  // Navigation
+  const idx=PILIERS_META.findIndex(x=>x.id===pid);
+  const prev=idx>0?PILIERS_META[idx-1]:null;
+  const next=idx<PILIERS_META.length-1?PILIERS_META[idx+1]:null;
+  const nav=document.createElement('div');
+  nav.style.cssText='display:flex;justify-content:space-between;margin-top:24px;padding-top:18px;border-top:1px solid var(--border);gap:10px';
+  nav.innerHTML=`
+    ${prev?`<button class="ghost-btn" onclick="switchPilier('${prev.id}')">← ${prev.label}</button>`:'<div></div>'}
+    ${next?`<button class="gold-btn" onclick="switchPilier('${next.id}')">→ ${next.label}</button>`:`<button class="gold-btn" onclick="showRapport()">📄 Générer le Rapport →</button>`}`;
+  wrap.appendChild(nav);
+  c.appendChild(wrap);
+}
+
+// ═══════════════════════════════════════════
+// PILIER 1 — ACQUISITION & MARCHÉ
+// ═══════════════════════════════════════════
+function calcArchetype(responses){
+  const r=responses;
+  // Q1 Mode de vente
+  const q1=r['icp_q1']||'';
+  const modeCode=q1.includes('commerçants')||q1.includes('Commerce')?'COMMERCE':q1.includes('particuliers')||q1.includes('B2C')?'B2C':q1.includes('B2B Structuré')||q1.includes('PME')||q1.includes('entreprises structurées')?'B2B_STRUCT':'B2B_SOLO';
+  // Q2 Stade (CA)
+  const q2=r['icp_q2']||'';
+  const stadeCode=q2.includes('0 à 15')||q2.includes('démarr')?'DEMARRAGE':q2.includes('15 000 à 50')||q2.includes('décollage')?'DECOLLAGE':q2.includes('50 000 à 150')||q2.includes('plateau')?'PLATEAU':'SCALING';
+  // Q4 Stoppeur
+  const q4=r['icp_q4']||'';
+  const stopCode=q4.includes('prospect')||q4.includes('visibilité')?'LEADS':q4.includes('conver')||q4.includes('signer')?'CONVERSION':q4.includes('fréquence')||q4.includes('rachètent')?'FREQUENCE':q4.includes('débordé')||q4.includes('capacité')?'CAPACITE':q4.includes('marge')||q4.includes('prix')?'MARGE':'LEADS';
+
+  // Calcul archétype
+  let profil=1;
+  if(modeCode==='COMMERCE')profil=9;
+  else if(modeCode==='B2C'&&stadeCode==='DEMARRAGE')profil=1;
+  else if(modeCode==='B2B_SOLO'&&stadeCode==='DECOLLAGE')profil=2;
+  else if(stadeCode==='PLATEAU'&&stopCode==='FREQUENCE')profil=3;
+  else if(modeCode==='B2B_STRUCT'&&stadeCode==='SCALING')profil=4;
+  else if(modeCode==='B2B_SOLO'&&stadeCode==='DEMARRAGE')profil=5;
+  else if(modeCode==='B2C'&&stadeCode==='DECOLLAGE')profil=6;
+  else if(stadeCode==='PLATEAU'&&stopCode==='MARGE')profil=7;
+  else if(stopCode==='LEADS'&&stadeCode==='DEMARRAGE')profil=8;
+  else if(modeCode==='B2C')profil=1;
+  else profil=2;
+
+  const PROFILES={
+    1:{nom:"Coach Solo Démarrant",stoppeur:"LEADS",robinet:"R1 — Liste Dormante",message:"Je connais des gens qui pourraient avoir besoin de moi mais je ne sais pas comment les approcher sans paraître désespéré."},
+    2:{nom:"Consultant B2B Invisible",stoppeur:"CONVERSION",robinet:"R2 — Prescripteurs",message:"J'ai des RDV, je présente bien, mais à la fin les gens me disent qu'ils vont réfléchir et je ne les revois plus."},
+    3:{nom:"Formateur Plateau",stoppeur:"FREQUENCE",robinet:"R1 + R3 — Liste Dormante & Communautés",message:"J'ai de bons clients qui sont satisfaits mais ils n'achètent qu'une fois et je dois toujours repartir de zéro."},
+    4:{nom:"Dirigeant PME Débordé",stoppeur:"CAPACITE",robinet:"R4 — Outreach Chirurgical",message:"Je suis débordé, je ne peux pas prendre plus de clients mais je n'ai pas encore les systèmes pour déléguer."},
+    5:{nom:"Expert Technique Sans Visibilité",stoppeur:"LEADS",robinet:"R2 — Prescripteurs",message:"Je suis très bon dans ce que je fais, mes clients le savent, mais je ne sais pas comment toucher de nouveaux clients."},
+    6:{nom:"Infopreneur Actif Sans Système",stoppeur:"CONVERSION",robinet:"R3 — Communautés",message:"J'ai des followers, du contenu, des gens qui me disent qu'ils aiment ce que je fais, mais ça ne se transforme pas en ventes."},
+    7:{nom:"Professionnel Libéral en Stagnation",stoppeur:"MARGE",robinet:"R1 — Liste Dormante",message:"Je travaille beaucoup, mes clients sont satisfaits, mais à la fin du mois il ne reste presque rien."},
+    8:{nom:"Entrepreneur Reconversion",stoppeur:"LEADS + POSITIONNEMENT",robinet:"R1 + R2 — Liste Dormante & Prescripteurs",message:"J'ai de l'expérience, je sais que je peux aider des gens, mais je n'arrive pas à expliquer clairement ce que je fais."},
+    9:{nom:"Commerçant / E-commerçant en Croissance",stoppeur:"MARGE + FRÉQUENCE",robinet:"R1 + R3 — Réactivation Clients & Volume",message:"Je vends, j'ai des clients, mais la marge est trop faible et je dois constamment trouver de nouveaux acheteurs parce que personne ne revient régulièrement."}
+  };
+  return {profil, ...PROFILES[profil]};
+}
+
+function buildP1(w){
+  // ── MATRICE ICP ISD™ ──────────────────────────────────
+  const icpBlock=document.createElement('div');
+  icpBlock.style.cssText='background:#C9A84C08;border:1px solid #C9A84C33;border-radius:10px;padding:18px;margin-bottom:20px';
+  icpBlock.innerHTML=`<div style="font-size:12px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">⬡ MATRICE ICP ISD™ — 9 QUESTIONS DE PROFILAGE</div>`;
+
+  const ICP_QUESTIONS=[
+    {key:"icp_q1",label:"Q1 — Mode de vente",help:"À qui vendez-vous principalement ?",options:["À des particuliers (B2C)","À des professionnels / indépendants en solo (B2B Solo)","À des PME / entreprises structurées (B2B Structuré)","À des commerçants / revendeurs / distributeurs (Commerce)"]},
+    {key:"icp_q2",label:"Q2 — Stade du business (CA mensuel)",help:"Soyez honnête — cet outil fonctionne mieux avec des chiffres réels.",options:["0 à 15 000 DHS/mois — Je démarre","15 000 à 50 000 DHS/mois — En décollage","50 000 à 150 000 DHS/mois — À un plateau","Plus de 150 000 DHS/mois — En scaling"]},
+    {key:"icp_q3",label:"Q3 — Type de relation client",help:"Quel est le modèle majoritaire dans votre activité ?",options:["Une mission = un paiement, pas de récurrence","Relation continue (retainer, abonnement, suivi)","Mixte — one-shot + suivi selon client"]},
+    {key:"icp_q4",label:"Q4 — Stoppeur dominant",help:"Choisissez ce qui correspond à 80% de votre réalité.",options:["Pas assez de prospects — mon pipeline est vide","Mes prospects ne signent pas — problème de conversion","Mes clients ne rachètent pas — problème de fréquence","Je suis débordé — problème de capacité","Je gagne assez mais la marge est faible — problème de prix"]},
+    {key:"icp_q5",label:"Q5 — Durée du blocage",help:"La durée révèle si c'est un symptôme passager ou un Stoppeur structurel.",options:["Moins de 3 mois — c'est récent","3 à 12 mois — ça dure","Plus d'un an — c'est structurel"]},
+    {key:"icp_q6",label:"Q6 — Canal d'acquisition",help:"Canal dominant actuel — pas celui que vous aimeriez utiliser.",options:["Bouche-à-oreille / réseau existant","LinkedIn (contenu ou outreach)","Facebook / Instagram","Email / newsletter","Publicité payante","Événements / conférences / CDD"]},
+    {key:"icp_q7",label:"Q7 — Déclencheur d'achat",help:"Pensez à vos 3 derniers clients signés.",options:["Recommandation d'un proche ou collègue","Contenu que j'ai publié (post, vidéo, article)","Urgence financière ou deadline business","Intervention dans un événement / conférence","Prospection directe de ma part"]},
+    {key:"icp_q8",label:"Q8 — Type d'offre",help:"Choisissez le format qui représente 70%+ de votre CA.",options:["Accompagnement individuel (coaching, consulting, conseil)","Formation / programme (groupe, e-learning, présentiel)","Prestation de service sur mesure (agence, freelance, BTP, artisan)","Vente de produits physiques (commerce, e-commerce, distribution)","Vente de produits digitaux (SaaS, logiciel, outil en ligne)","Mixte (combinaison de plusieurs formats)"]},
+    {key:"icp_q9",label:"Q9 — Source de stress principale",help:"Quelle est votre principale source de stress professionnel en ce moment ?",options:["Trouver des clients (prospection, visibilité, acquisition)","Convaincre et fermer les ventes (conversion, closing)","Livrer et satisfaire les clients (qualité, délais, SAV)","Gérer la trésorerie et les marges (cash, prix, coûts)","Gérer l'opérationnel (stocks, équipe, admin, logistique)"]},
+  ];
+
+  ICP_QUESTIONS.forEach(q=>{
+    const row=document.createElement('div');
+    row.style.cssText='margin-bottom:12px';
+    const lbl=document.createElement('div');
+    lbl.style.cssText='font-size:12px;font-weight:600;color:var(--text);margin-bottom:3px';
+    lbl.textContent=q.label;
+    const help=document.createElement('div');
+    help.style.cssText='font-size:11px;color:var(--muted);font-style:italic;margin-bottom:5px';
+    help.textContent=q.help;
+    const sel=document.createElement('select');
+    sel.style.cssText='font-size:12px;padding:6px 10px';
+    const defOpt=document.createElement('option');
+    defOpt.value='';defOpt.textContent='— Sélectionner —';sel.appendChild(defOpt);
+    q.options.forEach(opt=>{
+      const o=document.createElement('option');
+      o.value=opt;o.textContent=opt;
+      if(R()[q.key]===opt)o.selected=true;
+      sel.appendChild(o);
+    });
+    sel.onchange=()=>{
+      setR(q.key,sel.value);
+      updateArchetypeDisplay();
+    };
+    row.appendChild(lbl);row.appendChild(help);row.appendChild(sel);
+    icpBlock.appendChild(row);
+  });
+
+  // Affichage archétype
+  const archetypeDisplay=document.createElement('div');
+  archetypeDisplay.id='archetype-display';
+  archetypeDisplay.style.cssText='margin-top:14px;padding:14px;background:var(--dark);border-radius:8px;border:1px solid var(--border)';
+  archetypeDisplay.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center">Répondez aux questions pour identifier l\'arch\xe9type</div>';
+  icpBlock.appendChild(archetypeDisplay);
+  w.appendChild(icpBlock);
+
+  function updateArchetypeDisplay(){
+    const filled=ICP_QUESTIONS.filter(q=>R()[q.key]&&R()[q.key]!=='').length;
+    if(filled<3){
+      archetypeDisplay.innerHTML=`<div style="font-size:11px;color:var(--muted);text-align:center">${filled}/9 questions — répondez à au moins 3 pour voir l\'archétype</div>`;
+      return;
+    }
+    const arc=calcArchetype(R());
+    setR('icp_archetype',arc.nom);
+    setR('icp_stoppeur_initial',arc.stoppeur);
+    setR('icp_robinet',arc.robinet);
+    setR('icp_message_miroir',arc.message);
+    archetypeDisplay.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:10px">
+        <div>
+          <div style="font-size:10px;color:var(--gold);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Archétype ICP ISD™</div>
+          <div style="font-size:16px;font-weight:700;color:var(--text)">Profil ${arc.profil} — ${arc.nom}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:3px">Stoppeur initial</div>
+          <div style="background:#C0392B22;border:1px solid #C0392B44;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--red)">${arc.stoppeur}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:#C9A84C08;border:1px solid #C9A84C22;border-radius:6px;padding:8px">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Robinet prioritaire</div>
+          <div style="font-size:12px;color:var(--gold);font-weight:600">${arc.robinet}</div>
+        </div>
+        <div style="background:#27AE6008;border:1px solid #27AE6022;border-radius:6px;padding:8px">
+          <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Questions remplies</div>
+          <div style="font-size:12px;color:var(--green);font-weight:600">${filled}/9</div>
+        </div>
+      </div>
+      <div style="background:var(--dark2);border-radius:6px;padding:10px">
+        <div style="font-size:9px;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Message Miroir</div>
+        <div style="font-size:12px;color:var(--text);font-style:italic;line-height:1.6">${arc.message}</div>
+      </div>`;
+  }
+
+  // Initialiser l'affichage si données existantes
+  setTimeout(updateArchetypeDisplay, 100);
+
+  w.appendChild(secTitle('A — MARCHÉ & TERRAIN DE JEU (STRATEGY FIRST)'));
+
+  w.appendChild(qBlock('1.1','Quel est ton marché cible exact — et en quoi est-il suffisamment spécifique pour que tu sois perçu comme LE spécialiste ?','Trop large = invisible. Trop étroit = petit. Cherche le micro-niche dominant.',d=>{
+    d.appendChild(makeTextarea('1_1','Marché cible précis…',3));
+  }));
+
+  w.appendChild(qBlock('1.2','Qui est ton client idéal (ICP) — décrit en 3 dimensions',null,d=>{
+    d.appendChild(makeTable('1_2_table',['Dimension','Description précise','Où le trouver ?'],3));
+    d.appendChild(makeCheckboxes('1_2_checks',['Démographique (qui il est : poste, secteur, taille entreprise…)','Psychographique (comment il pense, ce qu\'il veut, ce qu\'il redoute)','Comportemental (ce qu\'il fait, ses habitudes d\'achat, recherches)','Niveau de sophistication (naïf / conscient du problème / cherche solution)'],2));
+  }));
+
+  w.appendChild(qBlock('1.3','Analyse du terrain de jeu — Taille, croissance, intensité concurrentielle',null,d=>{
+    d.appendChild(makeTable('1_3',['Taille marché estimée','En croissance ? (O/N)','Niveau concurrence (1-10)','% marché pénétré'],1));
+  }));
+
+  w.appendChild(qBlock('1.4','Cartographie concurrentielle — Qui sont tes concurrents directs, et en quoi ton offre est objectivement différente (pas déclarativement) ?','Différenciation prouvable ≠ différenciation déclarative',d=>{
+    d.appendChild(makeTable('1_4',['Concurrent','Ce qu\'il fait bien','Ce qu\'il fait mal','Ta différence prouvable'],4));
+  }));
+
+  w.appendChild(qBlock('1.5','Barrières à l\'entrée — Qu\'est-ce qui rend ta position difficile à copier ou à attaquer ?',null,d=>{
+    d.appendChild(makeCheckboxes('1_5',['Relation client forte et personnelle','Expertise rare difficile à répliquer','Réseau et prescripteurs exclusifs','Méthode propriétaire documentée','Réputation et preuve sociale accumulée','Contrats long terme ou fidélité élevée','Données ou insights de marché exclusifs','Aucune barrière solide actuellement'],2));
+  }));
+
+  w.appendChild(qBlock('1.6','Pouvoir de prix — Combien de tes clients négocient le prix ? Que dit ça sur ton positionnement ?','Jay Abraham : si >30% négocient, le problème est le positionnement, pas le prix.',d=>{
+    d.appendChild(makeFieldRow([['1_6_pct','% clients qui négocient','Ex: 40%'],['1_6_remise','Remise accordée en moy. (%)','Ex: 15%'],['1_6_pos','Prix vs marché','Bas/Juste/Au-dessus']],3));
+  }));
+
+  w.appendChild(secTitle('B — FORCE DU MESSAGE & AUTORITÉ'));
+
+  w.appendChild(qBlock('1.7','Ton message marketing actuel — complète ces phrases exactement comme tu les communiques aujourd\'hui',null,d=>{
+    d.appendChild(makeTable('1_7_phrases',['Phrase de positionnement','Formulation actuelle','Clarté client (1-10)'],3));
+    d.appendChild(makeCheckboxes('1_7_checks',['J\'aide [QUI] à [RÉSULTAT MESURABLE] en [DÉLAI] grâce à [MÉCANISME]','Je suis le seul à [MÉCANISME UNIQUE] pour [ICP] sans [SACRIFICE HABITUEL]','Contrairement à [CONCURRENT], je [DIFFÉRENCE PROUVABLE]'],1));
+  }));
+
+  w.appendChild(qBlock('1.8','Autorité & crédibilité perçue dans ton marché — ce que tu as aujourd\'hui',null,d=>{
+    d.appendChild(makeCheckboxes('1_8',['Présence LinkedIn avec contenu régulier','Articles ou publications dans des médias','Interventions dans des événements (conférences, podcasts invité)','Témoignages visibles et publics','Chiffres personnels mis en avant (résultats propres)','Livre / guide / IP publique documentée','Podcast ou interviews','Notoriété dans mon réseau immédiat seulement'],2));
+  }));
+
+  w.appendChild(qBlock('1.9','Prévisibilité du flux entrant — Ton flux de prospects est-il continu ou dépendant de lancements / événements ponctuels ?','Continu = système. Lancement = fragile.',d=>{
+    d.appendChild(makeFieldRow([['1_9_flux','Flux continu ou saisonnier ?','Continu/Saisonnier/Ponctuel'],['1_9_dernier','Dernier mois sans prospects (jours)','Ex: 15j'],['1_9_dep','Dépendance à des événements (%)','Ex: 70%']],3));
+  }));
+
+  w.appendChild(secTitle('C — CANAUX, ASSETS DORMANTS & LEVIERS RAPIDES'));
+
+  w.appendChild(qBlock('1.10','Canaux actifs — Coche et renseigne les volumes',null,d=>{
+    const lbl=document.createElement('div');lbl.style.cssText='font-size:11px;color:var(--gold);margin:8px 0 4px;font-weight:600';lbl.textContent='CANAUX EN LIGNE';d.appendChild(lbl);
+    d.appendChild(makeCheckboxes('1_10_online',['LinkedIn (contenu organique)','LinkedIn (outreach direct ciblé)','Facebook (groupes/communautés)','Facebook (publicités payantes)','Instagram','YouTube / vidéo','Email marketing / newsletter','Webinaire / Live','Publicité Google Ads','SEO / Blog','Podcast (propre ou invité)','Autre en ligne'],3));
+    const lbl2=document.createElement('div');lbl2.style.cssText='font-size:11px;color:var(--gold);margin:10px 0 4px;font-weight:600';lbl2.textContent='CANAUX HORS LIGNE';d.appendChild(lbl2);
+    d.appendChild(makeCheckboxes('1_10_offline',['Réseau personnel / bouche à oreille','Clubs dirigeants (CDD, BNI, Rotary…)','Conférences / événements sectoriels','Déjeuners / dîners d\'affaires','Prospection téléphonique directe','Salons professionnels','Recommandations structurées','Partenariats de distribution','Presse / médias locaux','Autre hors ligne'],3));
+  }));
+
+  w.appendChild(qBlock('1.11','Performance par canal actif',null,d=>{
+    d.appendChild(makeTable('1_11',['Canal actif','Leads qualifiés/mois','CPL estimé (DHS)','Taux lead→RDV (%)','Contrôlé ? (O/N)'],5));
+  }));
+
+  w.appendChild(qBlock('1.12','Inventaire des assets dormants — Ce que tu possèdes déjà sans l\'activer',null,d=>{
+    d.appendChild(makeTable('1_12_table',['Asset','Volume estimé','Dernier contact','Qualité (1-10)','Activable 7J ? (O/N)'],5));
+    d.appendChild(makeCheckboxes('1_12_checks',['Anciens clients (payants, terminés)','Prospects chauds non convertis (pipeline)','Liste email / newsletter','Contacts LinkedIn (1er degré)','Membres d\'associations / clubs','Anciens collègues / partenaires business','Prescripteurs potentiels non contactés','Audience réseaux sociaux (abonnés)','Contacts WhatsApp / téléphone direct','Anciens employeurs / clients indirects','Base de contacts d\'événements','Autre'],2));
+  }));
+
+  w.appendChild(qBlock('1.13','Prescripteurs naturels — Qui côtoie régulièrement ton ICP et pourrait envoyer des recommandations ?','Ex : experts-comptables, avocats, banquiers, coaches complémentaires, associations CCI/CGEM, CDD...',d=>{
+    d.appendChild(makeTable('1_13',['Profil prescripteur','Nom / Structure','Relation actuelle','Accord en place ? (O/N)','Action à mener'],5));
+  }));
+
+  w.appendChild(qBlock('1.14','Levier le plus rapide à activer dans les 7 prochains jours avec tes assets existants','Pense : liste dormante, anciens clients, prescripteur non contacté, événement réseau imminent.',d=>{
+    d.appendChild(makeTextarea('1_14','Levier rapide 7J…',3));
+  }));
+
+  w.appendChild(makeScoringBlock('P1',[
+    {label:'Clarté du marché et du positionnement (ICP précis, micro-niche)',bareme:'Fort=3 / Moyen=2 / Flou=1 / Inexistant=0',max:3},
+    {label:'Volume de leads qualifiés / mois',bareme:'≥30=4 / ≥15=3 / ≥8=2 / ≥3=1 / <3=0',max:4},
+    {label:'Diversité et contrôle des canaux actifs',bareme:'≥3 contrôlés=3 / 2=2 / 1=1 / 0=0',max:3},
+    {label:'Autorité & crédibilité perçue dans le marché',bareme:'Forte=2 / Visible=1 / Absente=0',max:2},
+    {label:'Assets dormants identifiés et plan d\'activation',bareme:'Riches+plan=3 / Quelques-uns=2 / Peu=1 / Aucun=0',max:3},
+    {label:'Prescripteurs actifs et système de recommandation',bareme:'Actif+système=4 / Actif=3 / Identifiés=2 / Aucun=0',max:4},
+  ]));
+}
+
+// ═══════════════════════════════════════════
+// PILIER 2 — OFFRE & CONVERSION
+// ═══════════════════════════════════════════
+function buildP2(w){
+  w.appendChild(secTitle('A — PUISSANCE DE L\'OFFRE (HORMOZI VALUE EQUATION)'));
+
+  w.appendChild(qBlock('2.1','Dream Outcome — Résultat Rêvé : quel est le résultat final exact et mesurable que tu promets ?','Spécifique + quantifié + délai = dominant.',d=>{
+    d.appendChild(makeTextarea('2_1','Résultat promis (formulation exacte)…',2));
+    d.appendChild(makeTable('2_1_metrics',['Quantifié ? (O/N)','Délai annoncé','Dominant vs marché ? (1-10)','Client l\'énonce en ces termes ? (O/N)'],1));
+  }));
+
+  w.appendChild(qBlock('2.2','Perceived Likelihood — Probabilité Perçue : qu\'est-ce qui prouve que tu peux délivrer ce résultat ?',null,d=>{
+    d.appendChild(makeCheckboxes('2_2',['Cas clients documentés avec résultats chiffrés','Témoignages vidéo avec résultats mesurables','Avant/Après prouvables et visibles','Mécanisme clair expliqué (pourquoi ça fonctionne)','Taux de réussite communiqué','Certifications / diplômes reconnus dans le marché','Résultats personnels mis en avant','Garantie résultat explicite et engageante','Entrée à risque zéro (essai, audit gratuit)','Références clients joignables','Aucune preuve structurée actuellement','Autre'],2));
+    d.appendChild(makeFieldRow([['2_2_cas','Nb cas clients chiffrés','Ex: 12'],['2_2_taux','Taux de réussite estimé %','Ex: 80%'],['2_2_garantie','Garantie ?','Aucune/Partielle/Forte']],3));
+  }));
+
+  w.appendChild(qBlock('2.3','Time to Success — Délai avant premier résultat visible (quick win)','Plus le délai est court, plus la valeur perçue est haute.',d=>{
+    d.appendChild(makeFieldRow([['2_3_delai','Délai 1ère victoire visible (jours)','Ex: 7'],['2_3_qw','Quick win J7 structurée ? (O/N)','O/N'],['2_3_final','Délai résultat final','Ex: 30j']],3));
+    const lbl=document.createElement('div');lbl.style.cssText='font-size:11px;color:var(--muted);margin:8px 0 4px;font-style:italic';lbl.textContent='Si tu n\'as pas de quick win J7 — qu\'est-ce qui serait crédible et délivrable en 7 jours pour ce client ?';d.appendChild(lbl);
+    d.appendChild(makeTextarea('2_3_qw_desc','Quick win J7 potentielle…',2));
+  }));
+
+  w.appendChild(qBlock('2.4','Effort & Sacrifice Client — Quelle est la charge réelle demandée au client pour obtenir le résultat ?','Moins l\'effort est grand, plus la valeur perçue est haute.',d=>{
+    d.appendChild(makeCheckboxes('2_4',['Réunions/sessions (fréquence: ___/sem)','Travail autonome exigé (heures/sem: ___)','Outils nouveaux à maîtriser','Changements de comportement profonds requis','Investissements supplémentaires nécessaires','Pré-requis techniques ou administratifs','Complexité d\'onboarding','Charge très faible — le résultat arrive vite'],2));
+    d.appendChild(makeTextarea('2_4_abandon','Où se trouve le point d\'abandon le plus fréquent dans ton parcours client ?',2));
+  }));
+
+  w.appendChild(qBlock('2.5','Architecture Delivery — Comment délivres-tu actuellement ? Et quelle architecture serait optimale ?',null,d=>{
+    d.appendChild(makeFieldRow([['2_5_format','Format actuel (DIY/DWY/DFY)','DWY'],['2_5_scalable','Scalable sans toi ? (O/N)','O/N'],['2_5_dep','Dépendance humaine (1=faible/10=totale)','Ex: 8']],3));
+    d.appendChild(makeTextarea('2_5_goulot','Qu\'est-ce qui crée un goulot dans ta livraison ?',2));
+  }));
+
+  w.appendChild(qBlock('2.6','Bonus, garantie, rareté/urgence — As-tu des éléments qui augmentent la valeur perçue ?',null,d=>{
+    d.appendChild(makeCheckboxes('2_6',['Bonus à haute valeur perçue / faible coût de production','Garantie résultat engageante','Garantie remboursement','Accès limité (places, cohortes, timing)','Urgence réelle ou légitime','Accompagnement exclusif ou personnalisé','Aucun de ces éléments actuellement'],2));
+  }));
+
+  w.appendChild(secTitle('B — PROCESSUS DE VENTE & QUALIFICATION'));
+
+  w.appendChild(qBlock('2.7','Cartographie du processus de vente complet — de la prise de contact au paiement',null,d=>{
+    d.appendChild(makeTable('2_7',['Étape','Action précise','Outil / support','Délai moy.','Taux d\'abandon'],6));
+  }));
+
+  w.appendChild(qBlock('2.8','Qualification — Quels sont tes critères explicites du BON client ? Et tes red flags ?','Confondre qualification (fit) et persuasion (closing) = des mauvais clients dans le système.',d=>{
+    d.appendChild(makeTable('2_8',['Critère du bon client','Red flag = mauvais client','Comment tu le détectes'],4));
+  }));
+
+  w.appendChild(qBlock('2.9','Scripts & outils de vente — ce qui existe aujourd\'hui',null,d=>{
+    d.appendChild(makeCheckboxes('2_9',['Script d\'appel de découverte','Trame de RDV commercial structuré','Email de suivi post-RDV','Séquence de relance multi-étapes','Réponses documentées aux objections principales','Proposition commerciale type','Email d\'onboarding post-vente','CRM avec pipeline suivi','Rien de documenté — tout dans ma tête'],2));
+  }));
+
+  w.appendChild(qBlock('2.10','Les 4 objections les plus fréquentes — et la réponse actuelle à chacune',null,d=>{
+    d.appendChild(makeTable('2_10',['Objection','Réponse actuelle','Efficacité (1-10)','Ce qui pourrait améliorer'],4));
+  }));
+
+  w.appendChild(qBlock('2.11','Prospects non convertis — Qu\'est-ce qui se passe avec ceux qui disent NON ?','Jay Abraham : "Vos leads non convertis sont votre actif le plus sous-utilisé".',d=>{
+    d.appendChild(makeFieldRow([['2_11_nb','Nb prospects froids en base','Ex: 45'],['2_11_sys','Système de suivi ? (O/N)','O/N'],['2_11_last','Dernière campagne réactivation','Ex: jamais']],3));
+  }));
+
+  w.appendChild(qBlock('2.12','Métriques de conversion par étape',null,d=>{
+    d.appendChild(makeTable('2_12',['Étape du funnel','Nombre/mois','Taux de passage (%)','Principal point de fuite'],5));
+  }));
+
+  w.appendChild(secTitle('C — PRICING POWER & DÉFENSE DU PRIX'));
+
+  w.appendChild(qBlock('2.13','Justification du prix — Ton prix est-il justifié par la VALEUR délivrée ou par le COÛT de ta prestation ?','Prix = valeur perçue × probabilité = positionnement. Pas = nombre d\'heures passées.',d=>{
+    d.appendChild(makeTextarea('2_13','Logique de prix actuelle…',3));
+  }));
+
+  w.appendChild(qBlock('2.14','Si tu augmentais tes prix de 30% demain, que se passerait-il réellement ?','Exercice de stress test. La réponse révèle le niveau réel de value proposition.',d=>{
+    d.appendChild(makeFieldRow([['2_14_perdus','Clients perdus estimés (%)','Ex: 20%'],['2_14_restes','Clients fidèles qui resteraient (%)','Ex: 80%'],['2_14_gain','Gain net estimé (DHS)','Ex: +5000']],3));
+  }));
+
+  w.appendChild(qBlock('2.15','Remises et négociations — Pourquoi accordes-tu des remises ? Qu\'est-ce que ça révèle ?',null,d=>{
+    d.appendChild(makeCheckboxes('2_15',['Le client demande et je cède par peur de perdre','Je propose moi-même pour accélérer la décision','Ma valeur n\'est pas assez claire pour justifier ce prix','Je n\'ai pas confiance en mon prix','Le marché est réellement sensible au prix','Je ne fais aucune remise — mon prix est défendable'],1));
+  }));
+
+  w.appendChild(makeScoringBlock('P2',[
+    {label:'DO — Résultat promis : spécifique, quantifié, délai',bareme:'Très fort=3 / Bon=2 / Flou=1 / Inexistant=0',max:3},
+    {label:'PL — Preuves : volume et qualité (cas clients, garantie)',bareme:'5+ cas+garantie=3 / 2-4=2 / 1=1 / Rien=0',max:3},
+    {label:'TS — Quick win J7 structurée et crédible',bareme:'J7 livrable=2 / J30=1 / Aucun=0',max:2},
+    {label:'ES — Effort client faible / architecture fluide',bareme:'DFY fluide=2 / DWY=1 / DIY lourd=0',max:2},
+    {label:'Processus de vente documenté et qualification claire',bareme:'Complet+CRM=3 / Partiel=2 / Aucun=0',max:3},
+    {label:'Pricing power (défense du prix, 0 remises)',bareme:'Fort=3 / Moyen=2 / Faible=1 / Aucun=0',max:3},
+  ]));
+}
+
+// ═══════════════════════════════════════════
+// PILIER 3 — RÉSEAU & RECOMMANDATIONS
+// ═══════════════════════════════════════════
+function buildP3(w){
+  w.appendChild(secTitle('A — CAPITAL RELATIONNEL & CARTOGRAPHIE'));
+
+  w.appendChild(qBlock('3.1','Cartographie des relations stratégiques — Liste les profils qui ont accès à ton ICP',null,d=>{
+    d.appendChild(makeTable('3_1',['Profil / Catégorie','Nom ou structure','Accès à ton ICP ? (O/N)','Relation actuelle','Potentiel (1-10)'],6));
+    d.appendChild(makeCheckboxes('3_1_types',['Experts-comptables / Fiduciaires','Avocats d\'affaires / Notaires','Banquiers / Conseillers financiers','Coaches / Consultants complémentaires','Agences marketing / communication','Associations pro (CCI, CGEM…)','Clubs d\'entrepreneurs (CDD, BNI, Rotary)','Formateurs dans d\'autres domaines','Recruteurs / DRH','Influenceurs B2B','Journalistes / Médias spécialisés','Fédérations sectorielles'],2));
+  }));
+
+  w.appendChild(qBlock('3.2','Qualité de ton réseau actif',null,d=>{
+    d.appendChild(makeFieldRow([['3_2_actifs','Nb prescripteurs actifs','Ex: 5'],['3_2_reco','Recommandations reçues/mois','Ex: 2'],['3_2_pct','% CA via réseau actuellement','Ex: 40%']],3));
+  }));
+
+  w.appendChild(secTitle('B — SYSTÈME DE RECOMMANDATION'));
+
+  w.appendChild(qBlock('3.3','As-tu un mécanisme FORMEL pour générer des recommandations ? (pas informel — structuré)',null,d=>{
+    d.appendChild(makeCheckboxes('3_3',['Je demande systématiquement après chaque livraison','J\'ai un script de demande de recommandation','J\'offre un incentive explicite pour chaque recommandation','J\'ai un programme d\'affiliation formalisé','Je maintiens une relation régulière avec mes prescripteurs','J\'envoie des cas clients à mes prescripteurs','Je fais des présentations croisées avec des partenaires','Aucun système — ça se passe informellement'],2));
+  }));
+
+  w.appendChild(qBlock('3.4','Si tu contactais tes 10 meilleurs clients cette semaine pour leur demander 1 recommandation chacun — combien en obtiendrais-tu, et pourquoi pas 10 ?',null,d=>{
+    d.appendChild(makeFieldRow([['3_4_nb','Recommandations attendues (nb)','Ex: 3'],['3_4_blocage','Raison principale du blocage','Ex: peur de déranger'],['3_4_last','Dernière demande faite','Ex: jamais']],3));
+  }));
+
+  w.appendChild(secTitle('C — PARTENARIATS STRATÉGIQUES & JOINT VENTURES'));
+
+  w.appendChild(qBlock('3.5','Opportunités de Joint Ventures — Qui a déjà une audience de ton ICP et avec qui un accord gagnant-gagnant est possible rapidement ?','Jay Abraham : JV = tu apportes de la valeur à leur audience, ils t\'envoient des prospects. 0 coût d\'acquisition.',d=>{
+    d.appendChild(makeTable('3_5',['Partenaire potentiel','Taille audience ICP','Type d\'accord envisageable','Probabilité d\'accord','Délai pour concrétiser'],5));
+  }));
+
+  w.appendChild(qBlock('3.6','As-tu des accords de partenariat actifs aujourd\'hui ? Si oui, décris-les. Si non, qu\'est-ce qui a bloqué jusqu\'ici ?',null,d=>{
+    d.appendChild(makeTextarea('3_6','Partenariats actifs / Blocages…',3));
+  }));
+
+  w.appendChild(qBlock('3.7','Distribution externe — communautés, associations, médias ou événements où ton ICP est concentré',null,d=>{
+    d.appendChild(makeTable('3_7',['Plateforme / Communauté','Audience estimée','Décideur / Contact','Angle d\'entrée','Prochaine étape'],5));
+  }));
+
+  w.appendChild(secTitle('D — ROBUSTESSE RELATIONNELLE & RISQUES'));
+
+  w.appendChild(qBlock('3.8','Risque de concentration — Ton réseau de recommandation dépend-il d\'une seule source ou personne ?',null,d=>{
+    d.appendChild(makeFieldRow([['3_8_pct','% recommandations via 1 source','Ex: 70%'],['3_8_risque','Risque si cette source disparaît','Fort/Moyen/Faible'],['3_8_plan','Plan de diversification (O/N)','O/N']],3));
+  }));
+
+  w.appendChild(qBlock('3.9','Long-term games (Naval) — Tes relations clés s\'accumulent-elles dans le temps, ou sont-elles transactionnelles ?','Les jeux à long terme = réputation, confiance, réciprocité — tout se compose.',d=>{
+    d.appendChild(makeCheckboxes('3_9',['Je nourris mes relations clés même sans besoin immédiat','Je partage de la valeur avant de demander quoi que ce soit','Mes partenaires me recommandent spontanément','J\'ai une réputation de fiabilité dans mon réseau','Mes relations tendent à m\'apporter de plus en plus de valeur','Mes relations sont principalement transactionnelles et éphémères'],1));
+  }));
+
+  w.appendChild(makeScoringBlock('P3',[
+    {label:'Capital relationnel actif (prescripteurs identifiés et actifs)',bareme:'Fort+actif=4 / Présent=3 / Faible=2 / Inexistant=0',max:4},
+    {label:'Système de recommandation formalisé',bareme:'Structuré+script=3 / Informel actif=2 / Informel=1 / Aucun=0',max:3},
+    {label:'JV / Partenariats actifs ou identifiés avec plan',bareme:'Actifs=3 / Identifiés+plan=2 / Vague=1 / Aucun=0',max:3},
+    {label:'Diversification du réseau (pas de dépendance mono-source)',bareme:'Diversifié=2 / Semi=1 / Mono-source=0',max:2},
+    {label:'Long-term games (relations qui s\'accumulent)',bareme:'Fort=2 / Moyen=1 / Transactionnel=0',max:2},
+  ]));
+}
+
+// ═══════════════════════════════════════════
+// PILIER 4 — ÉCONOMIE & MONÉTISATION
+// ═══════════════════════════════════════════
+function buildP4(w){
+  w.appendChild(secTitle('A — THROUGHPUT ACCOUNTING (TOC — GOLDRATT)'));
+
+  w.appendChild(qBlock('4.1','Throughput réel (T) — Calcul précis','T = Ventes − Coûts Totalement Variables (CTV). Les CTV = uniquement ce qui disparaît si tu ne vends pas.',d=>{
+    d.appendChild(makeTable('4_1',['Offre','Ventes/mois (DHS)','Coûts Variables RÉELS (DHS)','Throughput = V−CV (DHS)','T/client (DHS)'],4));
+    d.appendChild(makeFieldRow([['4_1_total','Throughput Total mensuel (DHS)','Ex: 45000'],['4_1_var','Variation T sur 12 mois (%)','Ex: +20%'],['4_1_dep','% dépendance à 1 seule offre','Ex: 60%']],3));
+  }));
+
+  w.appendChild(qBlock('4.2','Operating Expense (OE) — Toutes les charges fixes mensuelles (qui existent que tu vendes ou non)',null,d=>{
+    d.appendChild(makeTable('4_2',['Poste de charge fixe','Montant mensuel (DHS)','Flexible ? (O/N)','Essentiel au débit ? (O/N)'],5));
+    d.appendChild(makeCheckboxes('4_2_types',['Salaires / rémunération équipe','Loyer / espace de travail','Outils et logiciels','Formations / investissements','Remboursements d\'emprunts','Autre fixe'],2));
+    d.appendChild(makeFieldRow([['4_2_oe','OE Total mensuel (DHS)','Ex: 50000'],['4_2_net','Profit Net = T−OE (DHS)','Ex: -5000'],['4_2_roi','ROI = (T−OE)/Investissement','Ex: -10%']],3));
+  }));
+
+  w.appendChild(secTitle('B — LES 3 LEVIERS ABRAHAM (CLIENTS × VALEUR × FRÉQUENCE)'));
+
+  w.appendChild(qBlock('4.3','Levier 1 — Clients actifs : qui sont-ils, combien, et quel est le segment le plus rentable ?',null,d=>{
+    d.appendChild(makeFieldRow([['4_3_nb','Nb clients actifs total','Ex: 8'],['4_3_panier','Panier moyen (DHS)','Ex: 13000'],['4_3_seg_r','Segment le plus rentable','Ex: Coachs'],['4_3_seg_s','Segment le plus scalable','Ex: PME']],4));
+  }));
+
+  w.appendChild(qBlock('4.4','Levier 2 — Valeur de transaction : as-tu des offres d\'upsell et de montée en gamme structurées ?',null,d=>{
+    d.appendChild(makeCheckboxes('4_4',['Upsell immédiat après achat (order bump)','Offre premium proposée après résultat initial','Extension de durée (30J → 90J)','Accès groupe / communauté payante','Services additionnels complémentaires','Formation ou module additionnel','Maintenance / suivi mensuel','Aucun upsell structuré actuellement'],2));
+    d.appendChild(makeFieldRow([['4_4_pct','% clients qui montent en gamme','Ex: 30%'],['4_4_rev','Revenu upsell moyen (DHS)','Ex: 8000'],['4_4_ltv','Valeur client sur 90J (DHS)','Ex: 21000']],3));
+  }));
+
+  w.appendChild(qBlock('4.5','Levier 3 — Fréquence : à quelle fréquence rachète un client, et comment pourrait-on l\'augmenter ?',null,d=>{
+    d.appendChild(makeFieldRow([['4_5_freq','Fréquence actuelle (fois/an)','Ex: 1.2'],['4_5_max','Fréquence maximale possible','Ex: 3'],['4_5_rec','Revenu récurrent mensuel (DHS)','Ex: 5000']],3));
+  }));
+
+  w.appendChild(qBlock('4.6','Réactivation — Combien d\'anciens clients pourraient racheter si tu les contactais cette semaine ?','Actif le plus rapide à monétiser : 0 coût d\'acquisition, confiance déjà établie.',d=>{
+    d.appendChild(makeFieldRow([['4_6_nb','Nb anciens clients en base','Ex: 450'],['4_6_taux','Taux réactivation estimé %','Ex: 5%'],['4_6_ca','CA potentiel réactivation (DHS)','Ex: 35000']],3));
+  }));
+
+  w.appendChild(secTitle('C — RÉTENTION & EXPANSION'));
+
+  w.appendChild(qBlock('4.7','Taux de rétention et causes de départ — Pourquoi les clients partent-ils ?',null,d=>{
+    d.appendChild(makeTable('4_7',['Raison de départ','Fréquence','Préventible ? (O/N)','Action corrective envisagée'],4));
+    d.appendChild(makeFieldRow([['4_7_churn','Taux de churn mensuel (%)','Ex: 15%'],['4_7_duree','Durée vie client moy. (mois)','Ex: 3'],['4_7_sat','Taux de satisfaction (1-10)','Ex: 7']],3));
+  }));
+
+  w.appendChild(qBlock('4.8','Activation — À quel moment le client obtient-il sa première valeur concrète et visible ?','Le client qui atteint un premier résultat reste. Celui qui n\'atteint pas de résultat visible part.',d=>{
+    d.appendChild(makeFieldRow([['4_8_delai','Délai première victoire visible (jours)','Ex: 7'],['4_8_sys','Système d\'activation documenté ? (O/N)','O/N'],['4_8_taux','Taux réussite activation estimé (%)','Ex: 60%']],3));
+  }));
+
+  w.appendChild(qBlock('4.9','Expansion — Mécanismes qui font progresser le client dans l\'échelle d\'offres',null,d=>{
+    d.appendChild(makeCheckboxes('4_9',['Offre d\'upgrade proposée après résultat initial','Revue de performance client formelle','Jalons de progression clairs communiqués','Communication régulière sur la valeur créée','Programme de fidélité ou récompense','Communauté client (groupe, événements)','Témoignages et cas clients collectés systématiquement','Aucun mécanisme d\'expansion structuré'],2));
+  }));
+
+  w.appendChild(qBlock('4.10','Boucle de recommandation — Tes clients satisfaits t\'envoient-ils spontanément des contacts ?','Abraham : le client qui génère des recommandations = la preuve que la valeur est réelle ET perçue.',d=>{
+    d.appendChild(makeFieldRow([['4_10_nb','Recommandations spontanées/mois','Ex: 1'],['4_10_pct','% nouveaux clients via clients existants','Ex: 20%'],['4_10_sys','Système de parrainage ? (O/N)','O/N']],3));
+  }));
+
+  w.appendChild(secTitle('D — STRUCTURE D\'OFFRES & LADDER'));
+
+  w.appendChild(qBlock('4.11','Cartographie de ton échelle d\'offres complète — ce qui existe et ce qui manque',null,d=>{
+    d.appendChild(makeTable('4_11',['Niveau','Nom de l\'offre','Prix (DHS)','Existe ? (O/N)','Vendus/mois','CA/mois (DHS)'],5));
+    d.appendChild(makeCheckboxes('4_11_types',['Produit d\'entrée gratuit (lead magnet, audit offert)','Offre d\'entrée payante (200-2000 DHS)','Offre principale / Core (2000-30000 DHS)','Offre premium / haute valeur (30000+ DHS)','Abonnement récurrent mensuel','Offre de groupe / masterclass'],2));
+  }));
+
+  w.appendChild(makeScoringBlock('P4',[
+    {label:'Throughput réel positif et en croissance',bareme:'En croissance=3 / Stable=2 / Stagnant=1 / Négatif=0',max:3},
+    {label:'Marge brute (Throughput/CA)',bareme:'≥60%=4 / ≥45%=3 / ≥30%=2 / <30%=0',max:4},
+    {label:'Upsell + récurrence actifs (levier valeur)',bareme:'Les deux=3 / Un seul=2 / Aucun=0',max:3},
+    {label:'Rétention (taux de churn faible + système activation)',bareme:'Churn<5%+activation=3 / Moyen=2 / Élevé=0',max:3},
+    {label:'Boucle de recommandation client active',bareme:'Spontanée+structurée=2 / Rare=1 / Absente=0',max:2},
+  ]));
+}
+
+// ═══════════════════════════════════════════
+// PILIER 5 — CAPACITÉ & GOULOT
+// ═══════════════════════════════════════════
+function buildP5(w){
+  w.appendChild(secTitle('A — CARTOGRAPHIE DU TEMPS FONDATEUR (GOULOT HUMAIN)'));
+
+  w.appendChild(qBlock('5.1','Répartition réelle des heures hebdomadaires — remplis avec honnêteté',null,d=>{
+    d.appendChild(makeTable('5_1',['Activité','Heures/sem réelles','Valeur/heure estimée (DHS)','Délégable ? (O/N)','Priorité goulot (H/M/B)'],6));
+    d.appendChild(makeCheckboxes('5_1_types',['Prospection / génération leads','RDV de vente / closing','Livraison / accompagnement clients','Création de contenu marketing','Administration / facturation / emails','Stratégie / développement','Formation / apprentissage','Autre'],2));
+    d.appendChild(makeFieldRow([['5_1_total','Total heures/semaine','Ex: 50h'],['5_1_levier','Heures sur activités à fort levier','Ex: 15h'],['5_1_pct','% temps sur goulot prioritaire','Ex: 30%']],3));
+  }));
+
+  w.appendChild(qBlock('5.2','Sur quelle activité devrais-tu passer 80% de ton temps pour maximiser le Throughput du système ?','TOC : la ressource goulot ne doit jamais être laissée inactive.',d=>{
+    d.appendChild(makeTextarea('5_2','Activité à fort Throughput n°1…',2));
+  }));
+
+  w.appendChild(secTitle('B — MESURE DU DÉBIT RÉEL & LOCALISATION DU GOULOT'));
+
+  w.appendChild(qBlock('5.3','Calcul des capacités par ressource — où se trouve la contrainte réelle ?',null,d=>{
+    d.appendChild(makeTable('5_3',['Ressource','Capacité Max (clients/mois)','Charge Actuelle','Utilisation (%)','Goulot ? (O/N)'],4));
+    d.appendChild(makeCheckboxes('5_3_types',['Capacité Vente (h dispo ÷ h/vente)','Capacité Delivery (h dispo ÷ h/client)','Capacité Structurelle (max clients simultanés)','Capacité Encaissement (si délais de paiement)','Capacité Marché (demande disponible)'],1));
+    d.appendChild(makeFieldRow([['5_3_debit','Débit Réel (MIN des capacités — clients/mois)','Ex: 4'],['5_3_goulot','Goulot identifié :','Ex: Delivery'],['5_3_cash','Cash bloqué/mois par le goulot (DHS)','Ex: 20000']],3));
+  }));
+
+  w.appendChild(qBlock('5.4','Rendement par heure de contrainte','TOC : Return per Constraint Hour = T unitaire ÷ Temps sur goulot.',d=>{
+    d.appendChild(makeFieldRow([['5_4_t','T par client (DHS)','Ex: 11000'],['5_4_temps','Temps sur goulot par client (heures)','Ex: 12h'],['5_4_rch','T/heure de goulot (DHS/h)','Ex: 917']],3));
+  }));
+
+  w.appendChild(qBlock('5.5','WIP (Work In Progress) excessif — y a-t-il un encombrement avant le goulot ?','WIP excessif = travail commencé mais non terminé = blocage invisible du flux.',d=>{
+    d.appendChild(makeCheckboxes('5_5',['Plusieurs clients en cours simultanément dépassant la capacité','Des tâches commencées mais non terminées (>5 en cours)','Des prospects en attente de réponse depuis >48h','Des livrables en cours depuis >30 jours','Des emails/messages sans réponse >48h','Pas de WIP visible — le flux est fluide'],1));
+  }));
+
+  w.appendChild(qBlock('5.6','Point de rupture — si ton volume de clients doublait demain, qu\'est-ce qui casse en premier ?','Sois précis : identifie l\'étape exacte, pas "je suis débordé".',d=>{
+    d.appendChild(makeFieldRow([['5_6_r1','Point de rupture n°1','Ex: Delivery J+7'],['5_6_r2','Point de rupture n°2','Ex: Suivi admin'],['5_6_delai','Délai avant saturation complète','Ex: 2 semaines']],3));
+  }));
+
+  w.appendChild(secTitle('C — EXPLOITATION, SUBORDINATION & ÉLÉVATION DU GOULOT'));
+
+  w.appendChild(qBlock('5.7','Exploitation du goulot — Qu\'est-ce qui gaspille du temps sur la ressource contrainte ?','Avant d\'élever le goulot, éliminer le temps perdu dessus. C\'est gratuit et immédiat.',d=>{
+    d.appendChild(makeTextarea('5_7','Gaspillages identifiés sur le goulot…',3));
+  }));
+
+  w.appendChild(qBlock('5.8','Subordination — Est-ce que toutes les autres ressources sont alignées et au service du goulot ?','Les ressources NON goulots doivent ralentir si nécessaire pour ne pas surcharger le goulot.',d=>{
+    d.appendChild(makeCheckboxes('5_8',['Oui — tout est organisé autour du goulot','Non — d\'autres ressources optimisent localement','Le goulot est souvent interrompu par des urgences','Les incitations internes ne favorisent pas la subordination','On mesure l\'activité (temps passé) plutôt que le Throughput','Les décisions ne tiennent pas compte du goulot'],1));
+  }));
+
+  w.appendChild(qBlock('5.9','Élévation du goulot — Si on décidait d\'augmenter la capacité au goulot, quelle est la solution la plus rapide ?',null,d=>{
+    d.appendChild(makeCheckboxes('5_9',['Déléguer les tâches à faible valeur du goulot','Sous-traiter une partie de la livraison','Standardiser et documenter pour aller plus vite','Automatiser des étapes répétitives','Recruter pour renforcer la ressource contrainte','Simplifier l\'offre pour réduire la charge','Restructurer le modèle de delivery','Augmenter les prix pour moins de clients + marge'],2));
+  }));
+
+  w.appendChild(qBlock('5.10','Autonomie — Quels processus critiques ne fonctionnent QUE si tu es personnellement présent ?',null,d=>{
+    d.appendChild(makeCheckboxes('5_10',['Génération de leads','Qualification des prospects','Conduite des RDV de vente','Closing / signature','Livraison / accompagnement','Facturation / relances','Création de contenu','Décisions stratégiques','Tout dépend de moi','La plupart peut fonctionner sans moi'],2));
+  }));
+
+  w.appendChild(makeScoringBlock('P5',[
+    {label:'Goulot identifié avec précision + rendement calculé',bareme:'Identifié+quantifié=4 / Identifié=3 / Flou=2 / Inexistant=0',max:4},
+    {label:'Équilibre vente/delivery (déséquilibre = signal)',bareme:'Équilibré ≤20%=3 / ≤40%=2 / >40%=1 / Saturé=0',max:3},
+    {label:'Subordination au goulot (décisions alignées)',bareme:'Forte=2 / Partielle=1 / Absente=0',max:2},
+    {label:'Autonomie opérationnelle (fonctionne sans toi)',bareme:'≥70%=4 / ≥40%=3 / ≥20%=2 / <20%=0',max:4},
+    {label:'Plan d\'élévation du goulot identifié et faisable',bareme:'Plan concret=2 / Vague=1 / Aucun=0',max:2},
+  ]));
+}
+
+// ═══════════════════════════════════════════
+// PILIER 6 — FINANCES & ROBUSTESSE
+// ═══════════════════════════════════════════
+function buildP6(w){
+  w.appendChild(secTitle('A — PHOTOGRAPHIE FINANCIÈRE RÉELLE'));
+
+  w.appendChild(qBlock('6.1','Bilan financier réel de la période — tous les chiffres en DHS',null,d=>{
+    d.appendChild(makeTable('6_1',['Indicateur','Valeur (DHS)','Commentaire / contexte'],6));
+    d.appendChild(makeCheckboxes('6_1_types',['CA encaissé ce mois','CA facturé ce mois (si délai de paiement)','Charges fixes totales','Coûts variables totaux','Profit Net mensuel (T−OE)','Trésorerie disponible (compte bancaire)','Impayés en cours','Remboursements accordés ce mois'],2));
+  }));
+
+  w.appendChild(qBlock('6.2','Cycle de trésorerie — délai entre dépense et encaissement',null,d=>{
+    d.appendChild(makeFieldRow([['6_2_enc','Délai encaissement moyen (jours)','Ex: 15j'],['6_2_fourn','Délai paiement fournisseurs (jours)','Ex: 30j'],['6_2_cycle','Cycle net (négatif=sain / positif=danger)','Ex: -15j']],3));
+  }));
+
+  w.appendChild(qBlock('6.3','Seuil de rentabilité et marge de sécurité',null,d=>{
+    d.appendChild(makeFieldRow([['6_3_cf','Charges fixes/mois (DHS)','Ex: 50000'],['6_3_t','T/client (DHS)','Ex: 11000'],['6_3_be','Break-even (nb clients)','Ex: 4.5'],['6_3_vs','Clients actuels vs break-even','Ex: 3 / 4.5']],4));
+  }));
+
+  w.appendChild(qBlock('6.4','Concentration client — risque de dépendance',null,d=>{
+    d.appendChild(makeFieldRow([['6_4_top1','% CA client n°1','Ex: 35%'],['6_4_top3','% CA top 3 clients','Ex: 80%'],['6_4_total','Nb clients actifs total','Ex: 5']],3));
+  }));
+
+  w.appendChild(secTitle('B — ROBUSTESSE STRATÉGIQUE (THÉORIE DES JEUX)'));
+
+  w.appendChild(qBlock('6.5','Stress test prix — Si tu augmentais tes prix de 30% demain, quelle est la réaction probable de tes clients ?',null,d=>{
+    d.appendChild(makeFieldRow([['6_5_perdus','Clients perdus estimés (%)','Ex: 20%'],['6_5_reaction','Réaction probable','Ex: Renégociation'],['6_5_gain','Gain net estimé (DHS)','Ex: +3000']],3));
+  }));
+
+  w.appendChild(qBlock('6.6','Stress test concurrence — Si tu scalesais significativement, quelle serait la réaction probable des concurrents ?',null,d=>{
+    d.appendChild(makeCheckboxes('6_6',['Guerre des prix probable','Copie de ton modèle probable','Attaque réputationnelle possible','Aucune réaction attendue (marché peu attentif)','La concurrence est déjà forte — peu d\'espace','Mes barrières rendent l\'attaque difficile'],1));
+  }));
+
+  w.appendChild(qBlock('6.7','Dépendances critiques — risques de ruine à identifier',null,d=>{
+    d.appendChild(makeTable('6_7',['Dépendance','Niveau de risque (1-10)','Scénario de rupture','Plan B existant'],4));
+    d.appendChild(makeCheckboxes('6_7_types',['1 canal d\'acquisition dominant (>60% des leads)','1 client représentant >30% du CA','1 partenaire clé difficile à remplacer','1 plateforme ou algorithme externe','1 outil ou logiciel critique sans alternative','Ma propre présence (si je tombe malade)'],1));
+  }));
+
+  w.appendChild(qBlock('6.8','Robustesse des initiatives du Sprint — Pour chaque action majeure envisagée dans les 30J, évalue',null,d=>{
+    d.appendChild(makeTable('6_8',['Initiative','Probabilité succès (%)','Payoff si succès (DHS)','Coût si échec (DHS)','Réversible ? (O/N)'],4));
+  }));
+
+  w.appendChild(qBlock('6.9','Runway et résilience — combien de temps le business survit sans nouvelles ventes ?',null,d=>{
+    d.appendChild(makeFieldRow([['6_9_tres','Trésorerie disponible (DHS)','Ex: 8000'],['6_9_cf','Charges fixes/mois (DHS)','Ex: 50000'],['6_9_run','Runway (mois)','Ex: 0.16'],['6_9_stress','Niveau de stress financier (1-10)','Ex: 9']],4));
+  }));
+
+  w.appendChild(makeScoringBlock('P6',[
+    {label:'Rentabilité réelle (Profit Net positif et stable)',bareme:'>20% CA=4 / >0%=2 / Zéro=1 / Négatif=0',max:4},
+    {label:'Runway (mois de survie sans nouvelles ventes)',bareme:'≥6 mois=3 / ≥3=2 / ≥1=1 / <1=0',max:3},
+    {label:'Récurrence couvrant les charges fixes',bareme:'≥100% charges=3 / ≥50%=2 / >0%=1 / 0%=0',max:3},
+    {label:'Robustesse stratégique (pas de dépendances critiques)',bareme:'Diversifié+plan B=3 / Partiel=2 / Fragile=0',max:3},
+    {label:'Stress tests passés (prix, concurrence, rupture)',bareme:'Testés+robustes=2 / Partiels=1 / Non testés=0',max:2},
+  ]));
+}
+
+// ═══════════════════════════════════════════
+// PILIER 7 — FONDATEUR & LEVIERS
+// ═══════════════════════════════════════════
+function buildP7(w){
+  w.appendChild(secTitle('A — AVANTAGE INJUSTE & COMPÉTENCE RARE (NAVAL)'));
+
+  w.appendChild(qBlock('7.1','Specific Knowledge — Quelle est ta compétence rare, inimitable, issue de ton vécu unique ?','Naval : "Ce n\'est pas une compétence enseignée dans une école. C\'est quelque chose que tu as développé à travers ta vie."',d=>{
+    d.appendChild(makeTextarea('7_1','Compétence rare (formulation précise)…',3));
+    d.appendChild(makeFieldRow([['7_1_inim','Inimitable ? (O/N)','O/N'],['7_1_trans','Transférable à clients ? (O/N)','O/N'],['7_1_best','Meilleur dans micro-niche ? (O/N)','O/N']],3));
+  }));
+
+  w.appendChild(qBlock('7.2','Accountability — Es-tu clairement identifié comme propriétaire du résultat que tu promets ?','Naval : "Prends des risques sous ton propre nom. L\'accountability donne accès au levier."',d=>{
+    d.appendChild(makeCheckboxes('7_2',['Je signe en mon nom — ma réputation est en jeu','J\'ai une marque personnelle identifiable','Les clients achètent MOI, pas un service générique','Je prends publiquement position dans mon domaine','Je me cache derrière une structure / marque sans visage','Je n\'ai pas de positionnement public clair'],1));
+  }));
+
+  w.appendChild(qBlock('7.3','Avantage injuste composite — liste tout ce que tu possèdes que peu de gens dans ton marché ont',null,d=>{
+    d.appendChild(makeCheckboxes('7_3',['J\'ai vécu personnellement le problème que je résous','Réseau accumulé dans mon secteur cible','Méthode propriétaire documentée et nommée','Résultats personnels mesurables et prouvés','Crédibilité institutionnelle reconnue','Accès à des décideurs difficile à obtenir','Expérience cross-industries rare','Combinaison unique de compétences','Données ou insights exclusifs sur mon marché','Marque personnelle avec audience propre'],2));
+  }));
+
+  w.appendChild(secTitle('B — LES 4 LEVIERS DE NAVAL'));
+
+  w.appendChild(qBlock('7.4','Levier Médiatique — As-tu des actifs de contenu qui génèrent des leads ou de la crédibilité sans ta présence continue ?',null,d=>{
+    d.appendChild(makeCheckboxes('7_4',['Newsletter / liste email qui grandit','Contenu evergreen sur LinkedIn visible en recherche','Articles de fond référencés','Vidéos YouTube avec vues organiques','Podcast propre avec audience','Livre / guide téléchargeable','Aucun actif média propriétaire actuellement'],1));
+    d.appendChild(makeFieldRow([['7_4_pct','% leads via médias propriétaires','Ex: 10%'],['7_4_cont','Contenu publié/mois','Ex: 8 posts'],['7_4_grow','Croissance audience (mois/mois %)','Ex: +5%']],3));
+  }));
+
+  w.appendChild(qBlock('7.5','Levier Capital — Utilises-tu du capital (argent) pour acheter du temps ou du levier ?',null,d=>{
+    d.appendChild(makeCheckboxes('7_5',['J\'investis dans des outils qui automatisent','J\'ai des sous-traitants / freelances actifs','J\'investis en publicité pour amplifier l\'acquisition','Je reinvestis dans ma formation pour augmenter ma valeur','Je n\'utilise pas encore le capital comme levier'],1));
+  }));
+
+  w.appendChild(qBlock('7.6','Levier Équipe — As-tu des personnes qui étendent ta capacité sans que tu sois présent ?',null,d=>{
+    d.appendChild(makeCheckboxes('7_6',['Assistant(e) / gestionnaire admin','Commercial(e) ou closeur délégué','Prestataire de delivery délégué','Comptable / gestionnaire financier','Community manager / créateur de contenu','Je travaille seul — 0 levier équipe'],1));
+  }));
+
+  w.appendChild(qBlock('7.7','Levier Technologique — As-tu des systèmes qui travaillent pour toi sans intervention ?',null,d=>{
+    d.appendChild(makeCheckboxes('7_7',['CRM avec automatisation des relances','Séquences email automatisées','Processus d\'onboarding automatisé','Facturation automatisée','Rapports et dashboards automatisés','Aucune automatisation significative'],1));
+  }));
+
+  w.appendChild(secTitle('C — ALLOCATION DU TEMPS & FOCUS'));
+
+  w.appendChild(qBlock('7.8','Répartition hebdomadaire réelle des heures — sois honnête',null,d=>{
+    d.appendChild(makeTable('7_8',['Activité','Heures/sem réelles','% du total','Levier (H/M/B)','Devrait être (heures)'],6));
+    d.appendChild(makeCheckboxes('7_8_types',['Acquisition / Prospection','Vente / Closing','Delivery / Clients','Contenu / Marketing','Admin / Ops','Stratégie / Développement'],2));
+  }));
+
+  w.appendChild(qBlock('7.9','Taux horaire aspirationnel — combien ton heure devrait-elle valoir dans 12 mois ?',null,d=>{
+    d.appendChild(makeFieldRow([['7_9_act','Taux horaire actuel (DHS/h)','Ex: 200'],['7_9_asp','Taux aspirationnel 12M (DHS/h)','Ex: 1000'],['7_9_del','Ce qui doit être délégué maintenant','Ex: Admin, facturation']],3));
+  }));
+
+  w.appendChild(secTitle('D — BLOCAGES PSYCHOLOGIQUES, CROYANCES & PATTERNS'));
+
+  w.appendChild(qBlock('7.10','Niveau de confiance par domaine — score honnête (0 = aucune / 10 = totale)',null,d=>{
+    d.appendChild(makeTable('7_10',['Domaine','Score (0-10)','Ce qui explique ce score','Impact estimé sur le business (DHS/mois)'],5));
+    d.appendChild(makeCheckboxes('7_10_types',['Valeur réelle de mon offre','Ma capacité à vendre','Ma légitimité à me positionner expert','Ma capacité à délivrer les résultats promis','Ma capacité à déléguer et faire confiance','L\'atteinte de mon objectif 30J'],2));
+  }));
+
+  w.appendChild(qBlock('7.11','Peur dominante — quelle peur te fait éviter une action que tu sais importante ?',null,d=>{
+    d.appendChild(makeCheckboxes('7_11',['Peur du rejet / de la critique publique','Peur de ne pas délivrer le résultat promis','Peur du jugement sur mes prix','Peur de la visibilité et de l\'exposition','Peur d\'investir (argent ou temps) et d\'échouer','Peur de l\'échec visible devant mon réseau','Peur de demander à mon réseau','Aucune peur bloquante identifiée'],2));
+  }));
+
+  w.appendChild(qBlock('7.12','Croyance limitante la plus coûteuse — quelle croyance sur toi ou ton marché te coûte le plus d\'argent en ce moment ?','Ex : "Mon marché ne peut pas payer ce prix" / "Je ne suis pas encore assez légitime"',d=>{
+    d.appendChild(makeTextarea('7_12','Croyance coûteuse…',3));
+  }));
+
+  w.appendChild(qBlock('7.13','Pattern d\'exécution — quand tu reçois un plan clair, quel est ton comportement habituel ?',null,d=>{
+    d.appendChild(makeCheckboxes('7_13',['J\'exécute immédiatement sans sur-analyser','J\'analyse encore longtemps avant d\'agir','Je commence bien puis je m\'arrête','Je perfectionne au lieu d\'envoyer','Je réagis aux urgences plutôt qu\'au plan','Je délègue rapidement et pilote'],1));
+  }));
+
+  w.appendChild(secTitle('E — SYSTÈME DE PILOTAGE & LONG-TERM GAMES'));
+
+  w.appendChild(qBlock('7.14','Long-term games (Naval) — À quels jeux à long terme joues-tu dans ton business ?','Jeux courts = ventes ponctuelles. Jeux longs = réputation, réseau, actifs composés.',d=>{
+    d.appendChild(makeCheckboxes('7_14',['Construction d\'une réputation sectorielle durable','Réseau qui s\'accumule et se renforce dans le temps','Création d\'IP / méthodes propriétaires','Actifs médias qui grandissent sans effort marginal','Relations prescripteurs qui se renforcent','Aucune réflexion long terme — mode réactif'],1));
+  }));
+
+  w.appendChild(qBlock('7.15','Système de pilotage — as-tu une routine de suivi hebdomadaire de tes KPIs ?',null,d=>{
+    d.appendChild(makeFieldRow([['7_15_revue','Revue hebdo des KPIs ? (O/N)','O/N'],['7_15_nb','KPIs suivis (nb)','Ex: 5'],['7_15_data','Décisions basées sur données (%)','Ex: 40%']],3));
+  }));
+
+  w.appendChild(makeScoringBlock('P7',[
+    {label:'Avantage injuste clairement identifié et activé',bareme:'Fort+activé=3 / Identifié=2 / Flou=1 / Inexistant=0',max:3},
+    {label:'Levier actif (médias, capital, équipe, technologie)',bareme:'3+ leviers=4 / 2=3 / 1=2 / 0=0',max:4},
+    {label:'Focus : % temps sur activités à fort Throughput',bareme:'≥70%=3 / ≥50%=2 / ≥30%=1 / <30%=0',max:3},
+    {label:'Confiance et absence de blocages psychologiques',bareme:'Haute+aucun=3 / Bonne=2 / Blocages forts=0',max:3},
+    {label:'Long-term games actifs (réputation, réseau, actifs)',bareme:'Fort=2 / En construction=1 / Absent=0',max:2},
+  ]));
+}
+
+// ═══════════════════════════════════════════
+// RAPPORT IA
+// ═══════════════════════════════════════════
+function showRapport(){
+  const ov=document.getElementById('rapport-ov');
+  ov.classList.remove('hidden');
+  const client=S.clients.find(x=>x.id===S.curId);
+  ov.innerHTML=`
+    <div class="rapport-hdr">
+      <span style="color:var(--gold);font-weight:700">📄 Rapport Séquence Dominante™ — ${h(client?client.nom:'')}</span>
+      <div style="display:flex;gap:10px">
+        <button onclick="document.getElementById('rapport-ov').classList.add('hidden')" class="ghost-btn" style="padding:6px 12px;font-size:12px">✕</button>
+      </div>
+    </div>
+    <div class="rapport-body" id="rapport-body">
+      <div style="max-width:700px;margin:0 auto;padding:20px 0">
+
+        <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
+            <div><div style="font-weight:700;color:var(--text)">Générer le questionnaire rempli en PDF</div><div style="font-size:12px;color:var(--muted)">Toutes vos réponses dans un document imprimable</div></div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7">Cliquez ci-dessous pour ouvrir une page HTML avec toutes vos réponses. Faites <strong style="color:var(--text)">Ctrl+P</strong> → <strong style="color:var(--text)">Sauvegarder en PDF</strong>.</p>
+          <button onclick="ouvrirQuestionnairePDF()" class="gold-btn" style="width:100%;padding:11px;font-size:13px">📋 Ouvrir le questionnaire rempli → Imprimer en PDF</button>
+        </div>
+
+        <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gold);color:var(--dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
+            <div><div style="font-weight:700;color:var(--text)">Soumettre le PDF à l'IA</div><div style="font-size:12px;color:var(--muted)">L'IA lit le questionnaire complet et génère le rapport</div></div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7">Uploadez le PDF du questionnaire sauvegardé. L'IA lira toutes les réponses, tableaux et cases cochées.</p>
+          <div id="upload-zone" style="border:2px dashed var(--border);border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px"
+            onclick="document.getElementById('pdf-upload').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--gold)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="handlePDFDrop(event)">
+            <div style="font-size:28px;margin-bottom:8px">📄</div>
+            <div style="font-size:13px;color:var(--muted)">Glissez le PDF ici ou cliquez pour choisir</div>
+            <div id="pdf-filename" style="font-size:12px;color:var(--green);margin-top:6px"></div>
+          </div>
+          <input id="pdf-upload" type="file" accept=".pdf" class="hidden" onchange="handlePDFUpload(this)"/>
+          <button id="btn-gen-rapport" onclick="genRapportIAviaPDF()" style="background:var(--gold);color:var(--dark);padding:11px;font-size:13px;font-weight:600;border-radius:6px;border:none;width:100%;opacity:.5;cursor:not-allowed" disabled>✦ Générer le Rapport via IA →</button>
+        </div>
+
+        <div id="rapport-editable" class="hidden"></div>
+      </div>
+    </div>`;
+}
+
+
+function handlePDFUpload(input){
+  const file=input.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    window._pdfBase64=e.target.result.split(',')[1];
+    window._pdfFilename=file.name;
+    const fnEl=document.getElementById('pdf-filename');
+    if(fnEl)fnEl.textContent='✓ '+file.name+' chargé';
+    const uzEl=document.getElementById('upload-zone');
+    if(uzEl)uzEl.style.borderColor='var(--green)';
+    const btn=document.getElementById('btn-gen-rapport');
+    if(btn){
+      btn.disabled=false;
+      btn.style.opacity='1';
+      btn.style.cursor='pointer';
+      btn.removeAttribute('disabled');
+    }
+    console.log('PDF chargé, btn trouvé:', !!btn, 'base64 longueur:', window._pdfBase64?.length);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handlePDFDrop(e){
+  e.preventDefault();
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type==='application/pdf'){
+    const fakeInput={files:[file]};
+    handlePDFUpload(fakeInput);
+  }
+}
+
+async function genRapportIAviaPDF(){
+  const client=S.clients.find(x=>x.id===S.curId);
+  // Forcer rechargement depuis Supabase si données manquantes
+  if(!S.R[S.curId]||Object.keys(S.R[S.curId]).length===0){
+    const d=await sb('/rest/v1/dsd_clients?id=eq.'+S.curId+'&select=responses,scores');
+    if(d&&d[0]){S.R[S.curId]=d[0].responses||{};S.scores[S.curId]=d[0].scores||{};}
+  }
+  const scores=S.scores[S.curId]||{};
+  if(!window._pdfBase64){alert('Uploadez d\'abord le PDF du questionnaire.');return;}
+  
+  const btn=document.getElementById('btn-gen-rapport');
+  btn.textContent='⏳ Analyse du PDF en cours…';btn.disabled=true;
+  
+  const stoppeur=Object.entries(scores).length?Object.entries(scores).sort((a,b)=>a[1]-b[1])[0]:null;
+  const globalScore=Object.values(scores).length?(Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length).toFixed(1):'—';
+  const scoresStr=PILIERS_META.map(p=>`${p.id} ${p.label}: ${scores[p.id]?scores[p.id].toFixed(1):'-'}/10`).join(' | ');
+
+    // Données ICP depuis les réponses sauvegardées
+  const clientResponses=S.R[S.curId]||{};
+  const icpData={
+    archetype:clientResponses['icp_archetype']||'—',
+    stoppeur_initial:clientResponses['icp_stoppeur_initial']||'—',
+    robinet:clientResponses['icp_robinet']||'—',
+    message_miroir:clientResponses['icp_message_miroir']||'—',
+    q1:clientResponses['icp_q1']||'—',q2:clientResponses['icp_q2']||'—',
+    q3:clientResponses['icp_q3']||'—',q4:clientResponses['icp_q4']||'—',
+    q5:clientResponses['icp_q5']||'—',q6:clientResponses['icp_q6']||'—',
+    q7:clientResponses['icp_q7']||'—',q8:clientResponses['icp_q8']||'—',
+    q9:clientResponses['icp_q9']||'—',
+  };
+  window._icpData=icpData;
+
+const systemPrompt=`Tu es Saifeddine El Gharbaoui — Architecte de Clarté Rentable™. Tu as conduit le Diagnostic de Séquence Dominante™ Session 1 avec ${client?client.nom:''} (${client?client.entreprise||'':''}). Objectif Sprint : ${client?client.objectif||'non défini':'—'}.
+
+PROFIL ICP ISD™ :
+- Archétype : ${icpData.archetype}
+- Stoppeur initial : ${icpData.stoppeur_initial}
+- Robinet prioritaire : ${icpData.robinet}
+- Message Miroir : ${icpData.message_miroir}
+- Mode de vente : ${icpData.q1} | Stade CA : ${icpData.q2}
+- Type relation : ${icpData.q3} | Stoppeur : ${icpData.q4}
+- Durée blocage : ${icpData.q5} | Canal : ${icpData.q6}
+- Type offre : ${icpData.q8} | Stress : ${icpData.q9}
+
+SCORES ISD™ CALCULÉS : ${scoresStr}
+SCORE GLOBAL : ${globalScore}/10
+STOPPEUR DOMINANT (scores) : ${stoppeur?stoppeur[0]+' ('+stoppeur[1].toFixed(1)+'/10)':'---'}
+
+Le document joint est le questionnaire Diagnostic de Séquence Dominante™ complet avec toutes les réponses du client. Lis TOUT le document attentivement — tableaux, cases cochées, métriques chiffrées, textes libres — avant de générer le rapport.
+
+Génère le rapport JSON suivant UNIQUEMENT, sans markdown, sans texte avant ou après :
+
+{
+  "lecture_froide":"Section 0 — Lecture froide du profil fondateur. Commence par : Avant de parler de stratégie, parlons de réalité. 2 sous-sections : Ce qu'il EST (actifs réels) et Ce que le contexte impose (contraintes réelles). Basé sur les données réelles du questionnaire. 4-5 paragraphes. Direct, sans complaisance.",
+  "scores_interpretation":"Section 1 — Interprétation des 7 scores. Pour chaque pilier : score + 1-2 phrases d'interprétation directe basée sur les réponses. Identifie le pilier minimum = stoppeur confirmé.",
+  "calculs_economiques":"Section 2 — Calculs économiques réels. Utilise les chiffres exacts du questionnaire (Throughput, OE, Profit Net, Break-even, LTV, Runway). Tous les chiffres en DHS.",
+  "stoppeur_profond":"Section 3 — Le vrai stoppeur. Boucle causale en 3-4 couches basée sur les réponses réelles. Commence par : L'Audit de Clarté Rentable avait identifié un symptôme. Le Diagnostic de Séquence Dominante identifie maintenant la cause profonde.",
+  "classement_contraintes":"Section 4 — Top 3 contraintes basées sur les scores et réponses. Pour chacune : nom, levier ISD™, impact estimé DHS, pourquoi cet ordre.",
+  "plan_sprint":"Section 5 — Plan Sprint 30J. 4 semaines. Pour chaque : Contrainte attaquée / Priorité unique / Actions concrètes (3-5) / Livrable fin de semaine / KPI de la semaine.",
+  "kpis":"Section 6 — Tableau de bord KPIs. Basé sur les métriques réelles du questionnaire. Indicateurs quotidiens + hebdomadaires. Situation actuelle vs Cible 30J vs Cible 90J.",
+  "risques":"Section 7 — Top 5 risques d'échec avec mitigation. Basé sur les dépendances et fragilités identifiées dans le questionnaire.",
+  "levier_psychologique":"Section 8 — Levier psychologique. Ce que le diagnostic révèle vraiment sur le fondateur. Basé sur P7 (peurs, croyances, patterns). 3-4 paragraphes. Direct et bienveillant.",
+  "concurrence":"Section Concurrence — Basé sur Q1.3 et Q1.4. Cartographie 3 concurrents (nom/force/faiblesse/différenciation). Angle non exploité. Recommandation de positionnement.",
+  "action_48h":"Section 9 — UNE seule action dans les 48h. La plus asymétrique basée sur les assets dormants et le stoppeur. Définition de done précise.",
+  "options_suite":"Section 10 — 3 options : plan seul / Sprint 30J / Sprint 90J. Ce que chaque option implique concrètement pour CE client."
+}
+
+RÈGLES : Tutoiement. Chiffres en DHS. Basé UNIQUEMENT sur les données du questionnaire — pas d'inventions. Direct, analytique, bienveillant.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key': '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',
+        'anthropic-version':'2023-06-01',
+        'anthropic-beta':'pdfs-2024-09-25'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:4000,
+        messages:[{
+          role:'user',
+          content:[
+            {type:'document',source:{type:'base64',media_type:'application/pdf',data:window._pdfBase64}},
+            {type:'text',text:systemPrompt}
+          ]
+        }]
+      })
+    });
+    const json=await resp.json();
+    let txt=json.content?.[0]?.text||'{}';
+    console.log('=== RÉPONSE API BRUTE (500 premiers chars) ===');
+    console.log(txt.substring(0,500));
+    window._rawApiText = txt;
+    txt=txt.replace(/```json|```/g,'').trim();
+    // Chercher le JSON même s'il y a du texte avant
+    const jsonStart=txt.indexOf('{');
+    const jsonEnd=txt.lastIndexOf('}');
+    if(jsonStart>0)txt=txt.substring(jsonStart,jsonEnd+1);
+    let r={};
+    try{
+      r=JSON.parse(txt);
+      console.log('✅ JSON parsé, clés:', Object.keys(r));
+    }catch(e){
+      console.log('❌ Erreur parsing JSON:', e.message);
+      console.log('Texte à parser:', txt.substring(0,200));
+      r={lecture_froide:'Erreur de parsing — voir console. Relancer.'};
+    }
+    renderRapportEditable(r,client,scores,globalScore,stoppeur);
+    btn.textContent='✓ Rapport généré';
+  }catch(e){
+    btn.textContent='✦ Générer le Rapport via IA →';btn.disabled=false;
+    alert('Erreur : '+e.message);
+  }
+}
+
+async function genRapportIA(){
+  const client=S.clients.find(x=>x.id===S.curId);
+  const responses=S.R[S.curId]||{};
+  const scores=S.scores[S.curId]||{};
+  const body=document.getElementById('rapport-body');
+  body.innerHTML=`<div style="text-align:center;padding:60px;color:var(--muted)"><div style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px"></div><p>Analyse en cours — ${Object.keys(responses).length} champs de données…</p></div>`;
+
+  // Résumé des réponses clés
+  const clés={
+    '1_1':'Marché cible','1_4':'Concurrents','1_14':'Levier rapide 7J',
+    '2_1':'Résultat promis','2_13':'Logique prix','2_15_checks':'Remises',
+    '4_1_total':'Throughput total','4_2_oe':'OE mensuel','4_2_net':'Profit net',
+    '6_9_tres':'Trésorerie','6_9_cf':'Charges fixes','6_9_run':'Runway',
+    '7_1':'Specific Knowledge','7_12':'Croyance limitante','7_13_checks':'Pattern exécution'
+  };
+  let resume='';
+  Object.entries(clés).forEach(([k,label])=>{
+    const v=responses[k];
+    if(v&&(typeof v==='string'?v.trim():true)){
+      resume+=`\n${label}: ${typeof v==='string'?v.substring(0,200):JSON.stringify(v).substring(0,100)}`;
+    }
+  });
+
+  const scoresStr=PILIERS_META.map(p=>`${p.id} ${p.label}: ${scores[p.id]?scores[p.id].toFixed(1):'-'}/10`).join(' | ');
+  const globalScore=Object.values(scores).length?( Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length).toFixed(1):'—';
+  const stoppeur=Object.entries(scores).length?Object.entries(scores).sort((a,b)=>a[1]-b[1])[0]:null;
+
+  const prompt=`Tu es Saifeddine El Gharbaoui — Architecte de Clarté Rentable™. Tu viens de conduire le Diagnostic de Séquence Dominante™ Session 1 avec ${client?client.nom:''} (${client?client.entreprise||'':''}).
+
+OBJECTIF SPRINT : ${client?client.objectif||'non défini':'—'}
+SCORES ISD™ : ${scoresStr}
+SCORE GLOBAL : ${globalScore}/10
+STOPPEUR DOMINANT : ${stoppeur?stoppeur[0]+' ('+stoppeur[1].toFixed(1)+'/10)':'—'}
+
+DONNÉES CLÉS DU DIAGNOSTIC :${resume}
+
+Génère le rapport JSON suivant UNIQUEMENT, sans markdown :
+
+{
+  "lecture_froide":"Section 0 — Lecture froide du profil fondateur. Commence par : Avant de parler de stratégie, parlons de réalité. 2 sous-sections : Ce qu\'il EST (actifs réels) et Ce que le contexte impose (contraintes réelles). 4-5 paragraphes. Direct, sans complaisance.",
+  "scores_interpretation":"Section 1 — Interprétation des 7 scores. Pour chaque pilier : score + 1-2 phrases d\'interprétation directe. Identifie le pilier minimum = stoppeur confirmé.",
+  "calculs_economiques":"Section 2 — Calculs économiques réels. Throughput, OE, Profit Net, Break-even, LTV, Runway. Tous les chiffres en DHS.",
+  "stoppeur_profond":"Section 3 — Le vrai stoppeur. Boucle causale en 3-4 couches. Commence par : L\'Audit de Clarté Rentable avait identifié un symptôme. Le Diagnostic de Séquence Dominante identifie maintenant la cause profonde.",
+  "classement_contraintes":"Section 4 — Top 3 contraintes. Pour chacune : nom, levier ISD™, impact estimé DHS, pourquoi cet ordre.",
+  "plan_sprint":"Section 5 — Plan Sprint 30J. 4 semaines. Pour chaque : Contrainte attaquée / Priorité unique / Actions (3-5) / Livrable fin de semaine / KPI de la semaine.",
+  "kpis":"Section 6 — Tableau de bord KPIs. Indicateurs quotidiens + hebdomadaires. Situation actuelle vs Cible 30J vs Cible 90J.",
+  "risques":"Section 7 — Top 5 risques d\'échec avec mitigation pour chacun.",
+  "levier_psychologique":"Section 8 — Levier psychologique. Ce que le diagnostic révèle vraiment sur le fondateur. Basé sur P7. 3-4 paragraphes. Direct et bienveillant.",
+  "concurrence":"Section Concurrence — Cartographie 3 concurrents (nom/force/faiblesse/différenciation). Angle non exploité. Recommandation de positionnement concurrentiel.",
+  "action_48h":"Section 9 — UNE seule action dans les 48h. La plus asymétrique. Définition de done précise.",
+  "options_suite":"Section 10 — 3 options : plan seul / Sprint 30J / Sprint 90J. Ce que chaque option implique et pour qui."
+}
+
+RÈGLES : Tutoiement. Chiffres en DHS. Basé uniquement sur les données fournies. Direct, analytique, bienveillant.`;
+
+  try{
+    const resp=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,messages:[{role:'user',content:prompt}]})});
+    const json=await resp.json();
+    let txt=json.content?.[0]?.text||'{}';
+    txt=txt.replace(/```json|```/g,'').trim();
+    let r={};
+    try{r=JSON.parse(txt);}catch(e){r={lecture_froide:'Erreur de génération. Relancer.'};}
+    renderRapportEditable(r,client,scores,globalScore,stoppeur);
+  }catch(e){
+    body.innerHTML=`<div style="text-align:center;padding:40px;color:var(--red)">Erreur : ${e.message}</div>`;
+  }
+}
+
+function renderRapportEditable(r,client,scores,globalScore,stoppeur){
+  // Récupérer icpData — défini dans genRapportIAviaPDF ou recalculé ici
+  const icpFallback = (typeof icpData !== 'undefined') ? icpData : (function(){
+    const cr = S.R[S.curId]||{};
+    return {
+      archetype:cr['icp_archetype']||'—', stoppeur_initial:cr['icp_stoppeur_initial']||'—',
+      robinet:cr['icp_robinet']||'—', message_miroir:cr['icp_message_miroir']||'—',
+      q1:cr['icp_q1']||'—', q2:cr['icp_q2']||'—', q3:cr['icp_q3']||'—',
+      q4:cr['icp_q4']||'—', q5:cr['icp_q5']||'—', q6:cr['icp_q6']||'—',
+      q7:cr['icp_q7']||'—', q8:cr['icp_q8']||'—', q9:cr['icp_q9']||'—'
+    };
+  })();
+  window._rapportData=r;window._rapportClient=client;window._rapportScores=scores;window._rapportGlobal=globalScore;window._rapportStoppeur=stoppeur;window._icpData=icpFallback;
+  const sections=[
+    {k:'lecture_froide',t:'0 — LECTURE FROIDE DU PROFIL FONDATEUR',rows:8},
+    {k:'scores_interpretation',t:'1 — SCORES DIAGNOSTIQUES — LES 7 PILIERS',rows:6},
+    {k:'calculs_economiques',t:'2 — CALCULS ÉCONOMIQUES RÉELS',rows:6},
+    {k:'stoppeur_profond',t:'3 — LE VRAI STOPPEUR — DIAGNOSTIC PROFOND',rows:8},
+    {k:'classement_contraintes',t:'4 — CLASSEMENT DES CONTRAINTES — ORDRE D\'ATTAQUE',rows:6},
+    {k:'plan_sprint',t:'5 — PLAN SPRINT 30 JOURS — SÉQUENCE D\'ATTAQUE',rows:12},
+    {k:'kpis',t:'6 — TABLEAU DE BORD KPIS',rows:6},
+    {k:'risques',t:'7 — RISQUES & POINTS DE DÉFAILLANCE',rows:6},
+    {k:'levier_psychologique',t:'8 — LEVIER PSYCHOLOGIQUE',rows:6},
+    {k:'concurrence',t:'ANALYSE CONCURRENTIELLE',rows:6},
+    {k:'action_48h',t:'9 — ACTION IMMÉDIATE — DANS LES 48 HEURES',rows:4},
+    {k:'options_suite',t:'10 — OPTIONS DE SUITE',rows:5},
+  ];
+  // Afficher dans #rapport-editable si disponible, sinon dans rapport-body
+  const targetEl=document.getElementById('rapport-editable')||document.getElementById('rapport-body');
+  if(document.getElementById('rapport-editable')){
+    document.getElementById('rapport-editable').classList.remove('hidden');
+  }
+  const sc=scores;
+  targetEl.innerHTML=`
+    <div style="max-width:900px;margin:0 auto">
+      <div style="background:var(--dark2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:18px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+          <div><div style="font-size:9px;color:var(--muted);margin-bottom:2px">CLIENT</div><div style="font-weight:700">${h(client?client.nom:'')}</div><div style="font-size:11px;color:var(--muted)">${h(client?client.entreprise||'':'')}</div></div>
+          <div><div style="font-size:9px;color:var(--muted);margin-bottom:2px">OBJECTIF</div><div style="font-weight:700;color:var(--gold)">${h(client?client.objectif||'—':'—')}</div></div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${PILIERS_META.map(p=>{const s=sc[p.id];const c=s!==undefined?(s<4?'var(--red)':s<7?'var(--orange)':'var(--green)'):'var(--muted)';return`<div style="padding:3px 9px;border-radius:5px;background:${c}22;border:1px solid ${c}44;font-size:11px;color:${c}"><strong>${p.id}</strong> ${s!==undefined?s.toFixed(1):'—'}</div>`;}).join('')}
+          <div style="padding:3px 9px;border-radius:5px;background:#C9A84C22;border:1px solid #C9A84C44;font-size:11px;color:var(--gold)"><strong>Global</strong> ${globalScore}</div>
+          ${stoppeur?`<div style="padding:3px 9px;border-radius:5px;background:#C0392B22;border:1px solid #C0392B44;font-size:11px;color:var(--red)">⚠ STOPPEUR : ${stoppeur[0]}</div>`:''}
+        </div>
+      </div>
+      ${sections.map(s=>`<div class="r-section"><div class="r-sec-title">${s.t}</div><textarea id="edit-${s.k}" class="r-edit" rows="${s.rows}">${h(r[s.k]||'')}</textarea></div>`).join('')}
+      <div style="padding:14px 0;display:flex;justify-content:flex-end">
+        <button onclick="ouvrirPDF()" style="background:var(--gold);color:var(--dark);padding:11px 24px;font-size:13px;border-radius:6px;border:none;cursor:pointer;font-weight:700">📄 Générer PDF avec mes modifications →</button>
+      </div>
+    </div>`;
+}
+
+function getCheckboxTexts(key){
+  const MAP={
+    "1_2_checks":["Démographique (qui il est : poste, secteur, taille entreprise)","Psychographique (comment il pense, ce qu'il veut, ce qu'il redoute)","Comportemental (ce qu'il fait, ses habitudes d'achat)","Niveau de sophistication (naïf / conscient / cherche solution)"],
+    "1_5":["Relation client forte et personnelle","Expertise rare difficile à répliquer","Réseau et prescripteurs exclusifs","Méthode propriétaire documentée","Réputation et preuve sociale accumulée","Contrats long terme ou fidélité élevée","Données ou insights de marché exclusifs","Aucune barrière solide actuellement"],
+    "1_7_checks":["J'aide [QUI] à [RÉSULTAT MESURABLE] en [DÉLAI] grâce à [MÉCANISME]","Je suis le seul à [MÉCANISME UNIQUE] pour [ICP] sans [SACRIFICE HABITUEL]","Contrairement à [CONCURRENT], je [DIFFÉRENCE PROUVABLE]"],
+    "1_8":["Présence LinkedIn avec contenu régulier","Articles ou publications dans des médias","Interventions dans des événements","Témoignages visibles et publics","Chiffres personnels mis en avant","Livre / guide / IP publique documentée","Podcast ou interviews","Notoriété dans mon réseau immédiat seulement"],
+    "1_10_online":["LinkedIn (contenu organique)","LinkedIn (outreach direct ciblé)","Facebook (groupes/communautés)","Facebook (publicités payantes)","Instagram","YouTube / vidéo","Email marketing / newsletter","Webinaire / Live","Publicité Google Ads","SEO / Blog","Podcast (propre ou invité)","Autre en ligne"],
+    "1_10_offline":["Réseau personnel / bouche à oreille","Clubs dirigeants (CDD, BNI, Rotary)","Conférences / événements sectoriels","Déjeuners / dîners d'affaires","Prospection téléphonique directe","Salons professionnels","Recommandations structurées","Partenariats de distribution","Presse / médias locaux","Autre hors ligne"],
+    "1_12_checks":["Anciens clients (payants, terminés)","Prospects chauds non convertis","Liste email / newsletter","Contacts LinkedIn (1er degré)","Membres d'associations / clubs","Anciens collègues / partenaires","Prescripteurs potentiels non contactés","Audience réseaux sociaux","Contacts WhatsApp / téléphone direct","Anciens employeurs / clients indirects","Base de contacts d'événements","Autre"],
+    "2_2":["Cas clients documentés avec résultats chiffrés","Témoignages vidéo avec résultats mesurables","Avant/Après prouvables et visibles","Mécanisme clair expliqué","Taux de réussite communiqué","Certifications / diplômes reconnus","Résultats personnels mis en avant","Garantie résultat explicite","Entrée à risque zéro","Références clients joignables","Aucune preuve structurée actuellement","Autre"],
+    "2_4":["Réunions/sessions (fréquence variable)","Travail autonome exigé","Outils nouveaux à maîtriser","Changements de comportement profonds requis","Investissements supplémentaires nécessaires","Pré-requis techniques ou administratifs","Complexité d'onboarding","Charge très faible — le résultat arrive vite"],
+    "2_6":["Bonus à haute valeur perçue / faible coût","Garantie résultat engageante","Garantie remboursement","Accès limité (places, cohortes, timing)","Urgence réelle ou légitime","Accompagnement exclusif ou personnalisé","Aucun de ces éléments actuellement"],
+    "2_9":["Script d'appel de découverte","Trame de RDV commercial structuré","Email de suivi post-RDV","Séquence de relance multi-étapes","Réponses documentées aux objections","Proposition commerciale type","Email d'onboarding post-vente","CRM avec pipeline suivi","Rien de documenté — tout dans ma tête"],
+    "2_15":["Le client demande et je cède par peur","Je propose moi-même pour accélérer","Ma valeur n'est pas assez claire","Je n'ai pas confiance en mon prix","Le marché est réellement sensible au prix","Je ne fais aucune remise — mon prix est défendable"],
+    "3_1_types":["Experts-comptables / Fiduciaires","Avocats d'affaires / Notaires","Banquiers / Conseillers financiers","Coaches / Consultants complémentaires","Agences marketing / communication","Associations pro (CCI, CGEM)","Clubs d'entrepreneurs (CDD, BNI, Rotary)","Formateurs dans d'autres domaines","Recruteurs / DRH","Influenceurs B2B","Journalistes / Médias spécialisés","Fédérations sectorielles"],
+    "3_3":["Je demande systématiquement après chaque livraison","J'ai un script de demande de recommandation","J'offre un incentive explicite","J'ai un programme d'affiliation formalisé","Je maintiens une relation régulière avec mes prescripteurs","J'envoie des cas clients à mes prescripteurs","Je fais des présentations croisées avec des partenaires","Aucun système — ça se passe informellement"],
+    "3_9":["Je nourris mes relations clés même sans besoin immédiat","Je partage de la valeur avant de demander","Mes partenaires me recommandent spontanément","J'ai une réputation de fiabilité dans mon réseau","Mes relations tendent à m'apporter de plus en plus de valeur","Mes relations sont principalement transactionnelles"],
+    "4_2_types":["Salaires / rémunération équipe","Loyer / espace de travail","Outils et logiciels","Formations / investissements","Remboursements d'emprunts","Autre fixe"],
+    "4_4":["Upsell immédiat après achat","Offre premium proposée après résultat","Extension de durée (30J vers 90J)","Accès groupe / communauté payante","Services additionnels complémentaires","Formation ou module additionnel","Maintenance / suivi mensuel","Aucun upsell structuré actuellement"],
+    "4_9":["Offre d'upgrade proposée après résultat","Revue de performance client formelle","Jalons de progression clairs communiqués","Communication régulière sur la valeur créée","Programme de fidélité ou récompense","Communauté client (groupe, événements)","Témoignages et cas clients collectés","Aucun mécanisme d'expansion structuré"],
+    "4_11_types":["Produit d'entrée gratuit (lead magnet)","Offre d'entrée payante (200-2000 DHS)","Offre principale / Core (2000-30000 DHS)","Offre premium / haute valeur (30000+ DHS)","Abonnement récurrent mensuel","Offre de groupe / masterclass"],
+    "5_1_types":["Prospection / génération leads","RDV de vente / closing","Livraison / accompagnement clients","Création de contenu marketing","Administration / facturation / emails","Stratégie / développement","Formation / apprentissage","Autre"],
+    "5_3_types":["Capacité Vente","Capacité Delivery","Capacité Structurelle","Capacité Encaissement","Capacité Marché"],
+    "5_5":["Plusieurs clients en cours dépassant la capacité","Des tâches commencées mais non terminées","Des prospects en attente de réponse depuis plus de 48h","Des livrables en cours depuis plus de 30 jours","Des emails/messages sans réponse plus de 48h","Pas de WIP visible — le flux est fluide"],
+    "5_8":["Oui — tout est organisé autour du goulot","Non — d'autres ressources optimisent localement","Le goulot est souvent interrompu par des urgences","Les incitations internes ne favorisent pas la subordination","On mesure l'activité plutôt que le Throughput","Les décisions ne tiennent pas compte du goulot"],
+    "5_9":["Déléguer les tâches à faible valeur du goulot","Sous-traiter une partie de la livraison","Standardiser et documenter pour aller plus vite","Automatiser des étapes répétitives","Recruter pour renforcer la ressource contrainte","Simplifier l'offre pour réduire la charge","Restructurer le modèle de delivery","Augmenter les prix pour moins de clients"],
+    "5_10":["Génération de leads","Qualification des prospects","Conduite des RDV de vente","Closing / signature","Livraison / accompagnement","Facturation / relances","Création de contenu","Décisions stratégiques","Tout dépend de moi","La plupart peut fonctionner sans moi"],
+    "6_1_types":["CA encaissé ce mois","CA facturé ce mois","Charges fixes totales","Coûts variables totaux","Profit Net mensuel","Trésorerie disponible","Impayés en cours","Remboursements accordés ce mois"],
+    "6_6":["Guerre des prix probable","Copie de ton modèle probable","Attaque réputationnelle possible","Aucune réaction attendue","La concurrence est déjà forte","Mes barrières rendent l'attaque difficile"],
+    "6_7_types":["1 canal d'acquisition dominant (plus de 60%)","1 client représentant plus de 30% du CA","1 partenaire clé difficile à remplacer","1 plateforme ou algorithme externe","1 outil ou logiciel critique sans alternative","Ma propre présence"],
+    "7_2":["Je signe en mon nom — ma réputation est en jeu","J'ai une marque personnelle identifiable","Les clients achètent MOI","Je prends publiquement position dans mon domaine","Je me cache derrière une structure","Je n'ai pas de positionnement public clair"],
+    "7_3":["J'ai vécu personnellement le problème que je résous","Réseau accumulé dans mon secteur cible","Méthode propriétaire documentée et nommée","Résultats personnels mesurables et prouvés","Crédibilité institutionnelle reconnue","Accès à des décideurs difficile à obtenir","Expérience cross-industries rare","Combinaison unique de compétences","Données ou insights exclusifs","Marque personnelle avec audience propre"],
+    "7_4":["Newsletter / liste email qui grandit","Contenu evergreen sur LinkedIn","Articles de fond référencés","Vidéos YouTube avec vues organiques","Podcast propre avec audience","Livre / guide téléchargeable","Aucun actif média propriétaire actuellement"],
+    "7_5":["J'investis dans des outils qui automatisent","J'ai des sous-traitants / freelances actifs","J'investis en publicité pour amplifier l'acquisition","Je reinvestis dans ma formation","Je n'utilise pas encore le capital comme levier"],
+    "7_6":["Assistant(e) / gestionnaire admin","Commercial(e) ou closeur délégué","Prestataire de delivery délégué","Comptable / gestionnaire financier","Community manager / créateur de contenu","Je travaille seul — 0 levier équipe"],
+    "7_7":["CRM avec automatisation des relances","Séquences email automatisées","Processus d'onboarding automatisé","Facturation automatisée","Rapports et dashboards automatisés","Aucune automatisation significative"],
+    "7_8_types":["Acquisition / Prospection","Vente / Closing","Delivery / Clients","Contenu / Marketing","Admin / Ops","Stratégie / Développement"],
+    "7_10_types":["Valeur réelle de mon offre","Ma capacité à vendre","Ma légitimité à me positionner expert","Ma capacité à délivrer les résultats promis","Ma capacité à déléguer et faire confiance","L'atteinte de mon objectif 30J"],
+    "7_11":["Peur du rejet / de la critique publique","Peur de ne pas délivrer le résultat promis","Peur du jugement sur mes prix","Peur de la visibilité et de l'exposition","Peur d'investir et d'échouer","Peur de l'échec visible devant mon réseau","Peur de demander à mon réseau","Aucune peur bloquante identifiée"],
+    "7_13":["J'exécute immédiatement sans sur-analyser","J'analyse encore longtemps avant d'agir","Je commence bien puis je m'arrête","Je perfectionne au lieu d'envoyer","Je réagis aux urgences plutôt qu'au plan","Je délègue rapidement et pilote"],
+    "7_14":["Construction d'une réputation sectorielle durable","Réseau qui s'accumule et se renforce","Création d'IP / méthodes propriétaires","Actifs médias qui grandissent sans effort marginal","Relations prescripteurs qui se renforcent","Aucune réflexion long terme — mode réactif"]
+  };
+  return MAP[key]||[];
+}
+
+
+async function ouvrirQuestionnairePDF(){
+  const client=S.clients.find(x=>x.id===S.curId);
+  // Forcer rechargement depuis Supabase si données manquantes en mémoire
+  if(!S.R[S.curId]||Object.keys(S.R[S.curId]).length===0){
+    const d=await sb('/rest/v1/dsd_clients?id=eq.'+S.curId+'&select=responses,scores');
+    if(d&&d[0]){S.R[S.curId]=d[0].responses||{};S.scores[S.curId]=d[0].scores||{};}
+  }
+  const responses=S.R[S.curId]||{};
+  const scores=S.scores[S.curId]||{};
+  console.log('Réponses chargées:', Object.keys(responses).length, 'clés');
+  const dateStr=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  
+  // Construire le HTML imprimable du questionnaire rempli
+  // ── BLOC MATRICE ICP POUR LE PDF ──
+  const icpR={
+    q1:responses['icp_q1']||'—', q2:responses['icp_q2']||'—',
+    q3:responses['icp_q3']||'—', q4:responses['icp_q4']||'—',
+    q5:responses['icp_q5']||'—', q6:responses['icp_q6']||'—',
+    q7:responses['icp_q7']||'—', q8:responses['icp_q8']||'—',
+    q9:responses['icp_q9']||'—'
+  };
+  const icpArchetype=responses['icp_archetype']||'—';
+  const icpStoppeur=responses['icp_stoppeur_initial']||'—';
+  const icpRobinet=responses['icp_robinet']||'—';
+  const icpMessage=responses['icp_message_miroir']||'—';
+
+  const icpHTML=`
+  <div style="background:#F8F7F4;border:1px solid #E0D9C8;border-radius:8px;overflow:hidden;margin-bottom:24px">
+    <div style="background:#0A1628;color:#C9A84C;padding:10px 16px;font-weight:700;font-size:11pt;display:flex;justify-content:space-between;align-items:center">
+      <span>⬡ MATRICE ICP ISD™ — PROFIL CLIENT</span>
+      <span style="font-size:14pt;font-weight:700;color:#fff">${icpArchetype}</span>
+    </div>
+    <div style="padding:14px 16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+        <div style="background:#fff;border:1px solid #E0D9C8;border-radius:6px;padding:10px">
+          <div style="font-size:8pt;color:#888;text-transform:uppercase;margin-bottom:3px">Stoppeur initial</div>
+          <div style="font-weight:700;color:#C0392B;font-size:11pt">${icpStoppeur}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #E0D9C8;border-radius:6px;padding:10px">
+          <div style="font-size:8pt;color:#888;text-transform:uppercase;margin-bottom:3px">Robinet prioritaire</div>
+          <div style="font-weight:600;color:#C9A84C;font-size:10pt">${icpRobinet}</div>
+        </div>
+        <div style="background:#fff;border:1px solid #E0D9C8;border-radius:6px;padding:10px">
+          <div style="font-size:8pt;color:#888;text-transform:uppercase;margin-bottom:3px">Questions ICP</div>
+          <div style="font-weight:700;color:#27AE60;font-size:11pt">${Object.values(icpR).filter(v=>v!=='—').length}/9</div>
+        </div>
+      </div>
+      <div style="background:#0A162808;border:1px solid #0A162822;border-radius:6px;padding:10px;margin-bottom:12px">
+        <div style="font-size:8pt;color:#888;text-transform:uppercase;margin-bottom:4px">Message Miroir</div>
+        <div style="font-size:10pt;font-style:italic;color:#1a1a2e;line-height:1.6">"${icpMessage}"</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:9pt">
+        <thead><tr>
+          <th style="background:#0A1628;color:#C9A84C;padding:6px 10px;text-align:left;width:40%">Question</th>
+          <th style="background:#0A1628;color:#C9A84C;padding:6px 10px;text-align:left">Réponse</th>
+        </tr></thead>
+        <tbody>
+          ${[
+            ["Q1 — Mode de vente",icpR.q1],
+            ["Q2 — Stade du business (CA)",icpR.q2],
+            ["Q3 — Type de relation client",icpR.q3],
+            ["Q4 — Stoppeur dominant",icpR.q4],
+            ["Q5 — Durée du blocage",icpR.q5],
+            ["Q6 — Canal d'acquisition",icpR.q6],
+            ["Q7 — Déclencheur d'achat",icpR.q7],
+            ["Q8 — Type d'offre",icpR.q8],
+            ["Q9 — Source de stress principale",icpR.q9]
+          ].map((r,i)=>`<tr style="${i%2===0?'':'background:#F8F7F4'}">
+            <td style="padding:6px 10px;border-bottom:1px solid #E8E0D0;font-weight:500;color:#0A1628">${r[0]}</td>
+            <td style="padding:6px 10px;border-bottom:1px solid #E8E0D0;color:#2a2a3e">${r[1]}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  let sectionsHTML='';
+  
+  PILIERS_META.forEach(p=>{
+    const pilierDef=getPilierDef(p.id);
+    if(!pilierDef)return;
+    const sc=scores[p.id];
+    const scCol=sc!==undefined?(sc<4?'#C0392B':sc<7?'#E67E22':'#27AE60'):'#888';
+    
+    sectionsHTML+=`<div style="margin-bottom:28px">
+      <div style="background:#0A1628;color:#C9A84C;padding:10px 16px;border-radius:6px 6px 0 0;font-weight:700;font-size:11pt;display:flex;justify-content:space-between">
+        <span>${p.id} — ${p.label}</span>
+        ${sc!==undefined?`<span style="color:${scCol}">${sc.toFixed(1)}/10</span>`:''}
+      </div>
+      <div style="border:1px solid #E0D9C8;border-top:none;border-radius:0 0 6px 6px;padding:14px">`;
+    
+    pilierDef.sections.forEach(sec=>{
+      sectionsHTML+=`<div style="font-size:9pt;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid #E0D9C8">${sec.title}</div>`;
+      sec.questions.forEach(q=>{
+        sectionsHTML+=`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #F0EBE0">
+          <div style="font-size:9pt;font-weight:700;color:#C9A84C;margin-bottom:3px">${q.num}</div>
+          <div style="font-size:10pt;font-weight:600;color:#1a1a2e;margin-bottom:6px">${q.text}</div>`;
+        
+        // Afficher la valeur selon le type de clé
+        const allKeys=Object.keys(responses).filter(k=>k.startsWith(q.num.replace('.','_')));
+        allKeys.forEach(k=>{
+          const val=responses[k];
+          if(!val)return;
+          if(typeof val==='string'&&val.trim()){
+            sectionsHTML+=`<div style="font-size:10pt;color:#2a2a3e;background:#F8F7F4;padding:8px 12px;border-radius:4px;border-left:3px solid #C9A84C;margin-top:4px">${val}</div>`;
+          } else if(Array.isArray(val)&&val.length){
+            // Cases à cocher — résoudre les textes depuis le mapping
+            const checkTexts=getCheckboxTexts(k);
+            const selectedTexts=val.map(i=>checkTexts[i]||('Option '+(i+1)));
+            sectionsHTML+=`<div style="font-size:9.5pt;color:#2a2a3e;margin-top:4px;line-height:1.8">${selectedTexts.map(t=>`✓ ${t}`).join('<br>')}</div>`;
+          } else if(Array.isArray(val)&&val.length&&Array.isArray(val[0])){
+            // Tableau
+            const headers=val[0];
+            sectionsHTML+='<table style="width:100%;border-collapse:collapse;font-size:9pt;margin-top:6px">';
+            val.forEach((row,ri)=>{
+              sectionsHTML+='<tr>';
+              row.forEach(cell=>{
+                if(ri===0)sectionsHTML+=`<th style="background:#0A1628;color:#C9A84C;padding:5px 8px;text-align:left;font-size:8.5pt">${cell}</th>`;
+                else sectionsHTML+=`<td style="padding:5px 8px;border-bottom:1px solid #E8E0D0">${cell||''}</td>`;
+              });
+              sectionsHTML+='</tr>';
+            });
+            sectionsHTML+='</table>';
+          }
+        });
+        
+        // Si rien trouvé pour cette question
+        const hasData=allKeys.some(k=>{const v=responses[k];return v&&(typeof v==='string'?v.trim():(Array.isArray(v)?v.length:false));});
+        if(!hasData){
+          sectionsHTML+=`<div style="font-size:9.5pt;color:#aaa;font-style:italic">— Non renseigné</div>`;
+        }
+        
+        sectionsHTML+='</div>';
+      });
+    });
+    
+    // Scoring
+    const scoreVal=scores[p.id];
+    const comment=responses['comment_'+p.id];
+    sectionsHTML+=`<div style="background:#F8F7F4;border:1px solid #E0D9C8;border-radius:6px;padding:10px;margin-top:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:10pt;font-weight:700;color:#0A1628">Score ${p.id}</span>
+        <span style="font-size:16pt;font-weight:700;color:${scoreVal!==undefined?(scoreVal<4?'#C0392B':scoreVal<7?'#E67E22':'#27AE60'):'#888'}">${scoreVal!==undefined?scoreVal.toFixed(1)+'/10':'—'}</span>
+      </div>
+      ${comment?`<div style="font-size:9.5pt;color:#555;margin-top:6px;font-style:italic">${comment}</div>`:''}
+    </div>`;
+    
+    sectionsHTML+='</div></div>';
+  });
+  
+  const globalScore=Object.values(scores).length?(Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length).toFixed(1):'—';
+  const stoppeur=Object.entries(scores).length?Object.entries(scores).sort((a,b)=>a[1]-b[1])[0]:null;
+
+  const qHTML=`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/>
+<title>Questionnaire DSD™ — ${h(client?client.nom:'')}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a2e;font-size:10.5pt;line-height:1.6}
+.page{max-width:800px;margin:0 auto;padding:36px}
+@media print{.page{padding:16px}.no-print{display:none!important}@page{margin:12mm;size:A4}}
+</style></head><body>
+<div class="page">
+<div class="no-print" style="margin-bottom:20px"><button onclick="window.print()" style="background:#0A1628;color:#C9A84C;padding:9px 18px;border:none;border-radius:6px;font-size:11pt;cursor:pointer;font-weight:600">🖨 Imprimer / Sauvegarder en PDF</button></div>
+<div style="border-bottom:3px solid #0A1628;padding-bottom:16px;margin-bottom:20px">
+  <div style="font-size:20pt;font-weight:700;color:#0A1628">DIAGNOSTIC SÉQUENCE DOMINANTE<span style="color:#C9A84C">™</span></div>
+  <div style="font-size:9pt;color:#555;font-style:italic;margin-top:4px">Session 1 · Sprint 30 Jours · Guide Praticien</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;background:#F8F7F4;border:1px solid #E0D9C8;border-radius:8px;padding:14px;margin-bottom:20px">
+  <div><div style="font-size:9pt;color:#888;text-transform:uppercase;margin-bottom:2px">Client</div><div style="font-weight:700;font-size:12pt">${h(client?client.nom:'')}</div><div style="font-size:10pt;color:#555">${h(client?client.entreprise||'':'')}</div></div>
+  <div><div style="font-size:9pt;color:#888;text-transform:uppercase;margin-bottom:2px">Date</div><div style="font-weight:700">${dateStr}</div></div>
+  <div><div style="font-size:9pt;color:#888;text-transform:uppercase;margin-bottom:2px">Objectif Sprint</div><div style="font-weight:700;color:#C9A84C">${h(client?client.objectif||'—':'—')}</div></div>
+  <div><div style="font-size:9pt;color:#888;text-transform:uppercase;margin-bottom:2px">Score Global</div><div style="font-weight:700;font-size:14pt">${globalScore}/10</div></div>
+</div>
+${stoppeur?`<div style="background:#0A1628;color:#C9A84C;text-align:center;padding:12px;border-radius:8px;margin-bottom:20px;font-weight:700">⚡ STOPPEUR DOMINANT : ${stoppeur[0]} — ${PILIERS_META.find(p=>p.id===stoppeur[0])?.label||''} : ${stoppeur[1].toFixed(1)}/10</div>`:''}
+${icpHTML}
+${sectionsHTML}
+<div style="border-top:2px solid #E0D9C8;padding-top:12px;margin-top:18px;display:flex;justify-content:space-between;font-size:8.5pt;color:#999">
+  <div>Diagnostic de Séquence Dominante™ · ${h(client?client.nom:'')} · ${dateStr} · Confidentiel</div>
+  <div>Saifeddine El Gharbaoui · Architecte de Clarté Rentable™</div>
+</div>
+</div></body></html>`;
+
+  const w=window.open('','_blank');
+  if(w){w.document.write(qHTML);w.document.close();}
+}
+
+// Référence aux définitions des piliers pour la génération PDF questionnaire
+function getPilierDef(pid){
+  const defs={
+    P1:{sections:[
+      {title:'A — MARCHÉ & TERRAIN DE JEU',questions:[{num:'1.1',text:'Marché cible exact'},{num:'1.2',text:'Client idéal (ICP) — 3 dimensions'},{num:'1.3',text:'Analyse du terrain de jeu'},{num:'1.4',text:'Cartographie concurrentielle'},{num:'1.5',text:'Barrières à l\'entrée'},{num:'1.6',text:'Pouvoir de prix'}]},
+      {title:'B — MESSAGE & AUTORITÉ',questions:[{num:'1.7',text:'Message marketing actuel'},{num:'1.8',text:'Autorité & crédibilité perçue'},{num:'1.9',text:'Prévisibilité du flux entrant'}]},
+      {title:'C — CANAUX & ASSETS',questions:[{num:'1.10',text:'Canaux actifs'},{num:'1.11',text:'Performance par canal'},{num:'1.12',text:'Inventaire des assets dormants'},{num:'1.13',text:'Prescripteurs naturels'},{num:'1.14',text:'Levier le plus rapide 7J'}]}
+    ]},
+    P2:{sections:[
+      {title:'A — PUISSANCE DE L\'OFFRE',questions:[{num:'2.1',text:'Dream Outcome — Résultat Rêvé'},{num:'2.2',text:'Perceived Likelihood — Preuves'},{num:'2.3',text:'Time to Success — Quick win'},{num:'2.4',text:'Effort & Sacrifice Client'},{num:'2.5',text:'Architecture Delivery'},{num:'2.6',text:'Bonus, garantie, rareté'}]},
+      {title:'B — PROCESSUS DE VENTE',questions:[{num:'2.7',text:'Cartographie processus de vente'},{num:'2.8',text:'Qualification — BON client'},{num:'2.9',text:'Scripts & outils de vente'},{num:'2.10',text:'Les 4 objections fréquentes'},{num:'2.11',text:'Prospects non convertis'},{num:'2.12',text:'Métriques de conversion'}]},
+      {title:'C — PRICING POWER',questions:[{num:'2.13',text:'Justification du prix'},{num:'2.14',text:'Stress test prix +30%'},{num:'2.15',text:'Remises et négociations'}]}
+    ]},
+    P3:{sections:[
+      {title:'A — CAPITAL RELATIONNEL',questions:[{num:'3.1',text:'Cartographie relations stratégiques'},{num:'3.2',text:'Qualité du réseau actif'}]},
+      {title:'B — SYSTÈME DE RECOMMANDATION',questions:[{num:'3.3',text:'Mécanisme formel de recommandations'},{num:'3.4',text:'10 clients → 1 recommandation'}]},
+      {title:'C — PARTENARIATS & JV',questions:[{num:'3.5',text:'Opportunités de Joint Ventures'},{num:'3.6',text:'Accords de partenariat actifs'},{num:'3.7',text:'Distribution externe'}]},
+      {title:'D — ROBUSTESSE RELATIONNELLE',questions:[{num:'3.8',text:'Risque de concentration'},{num:'3.9',text:'Long-term games (Naval)'}]}
+    ]},
+    P4:{sections:[
+      {title:'A — THROUGHPUT ACCOUNTING',questions:[{num:'4.1',text:'Throughput réel (T)'},{num:'4.2',text:'Operating Expense (OE)'}]},
+      {title:'B — 3 LEVIERS ABRAHAM',questions:[{num:'4.3',text:'Levier 1 — Clients actifs'},{num:'4.4',text:'Levier 2 — Valeur de transaction'},{num:'4.5',text:'Levier 3 — Fréquence'},{num:'4.6',text:'Réactivation anciens clients'}]},
+      {title:'C — RÉTENTION & EXPANSION',questions:[{num:'4.7',text:'Taux de rétention et départs'},{num:'4.8',text:'Activation — Première valeur'},{num:'4.9',text:'Expansion — Montée en gamme'},{num:'4.10',text:'Boucle de recommandation client'}]},
+      {title:'D — STRUCTURE D\'OFFRES',questions:[{num:'4.11',text:'Cartographie de l\'échelle d\'offres'}]}
+    ]},
+    P5:{sections:[
+      {title:'A — CARTOGRAPHIE DU TEMPS',questions:[{num:'5.1',text:'Répartition des heures hebdomadaires'},{num:'5.2',text:'Activité à 80% du temps'}]},
+      {title:'B — LOCALISATION DU GOULOT',questions:[{num:'5.3',text:'Capacités par ressource'},{num:'5.4',text:'Rendement par heure de contrainte'},{num:'5.5',text:'WIP excessif'},{num:'5.6',text:'Point de rupture'}]},
+      {title:'C — EXPLOITATION & ÉLÉVATION',questions:[{num:'5.7',text:'Exploitation du goulot'},{num:'5.8',text:'Subordination au goulot'},{num:'5.9',text:'Élévation du goulot'},{num:'5.10',text:'Autonomie — processus sans toi'}]}
+    ]},
+    P6:{sections:[
+      {title:'A — PHOTOGRAPHIE FINANCIÈRE',questions:[{num:'6.1',text:'Bilan financier réel — DHS'},{num:'6.2',text:'Cycle de trésorerie'},{num:'6.3',text:'Seuil de rentabilité'},{num:'6.4',text:'Concentration client'}]},
+      {title:'B — ROBUSTESSE STRATÉGIQUE',questions:[{num:'6.5',text:'Stress test prix +30%'},{num:'6.6',text:'Stress test concurrence'},{num:'6.7',text:'Dépendances critiques'},{num:'6.8',text:'Robustesse des initiatives Sprint'},{num:'6.9',text:'Runway et résilience'}]}
+    ]},
+    P7:{sections:[
+      {title:'A — AVANTAGE INJUSTE & COMPÉTENCE RARE',questions:[{num:'7.1',text:'Specific Knowledge'},{num:'7.2',text:'Accountability — propriétaire du résultat'},{num:'7.3',text:'Avantage injuste composite'}]},
+      {title:'B — LES 4 LEVIERS DE NAVAL',questions:[{num:'7.4',text:'Levier Médiatique'},{num:'7.5',text:'Levier Capital'},{num:'7.6',text:'Levier Équipe'},{num:'7.7',text:'Levier Technologique'}]},
+      {title:'C — ALLOCATION DU TEMPS',questions:[{num:'7.8',text:'Répartition hebdomadaire réelle'},{num:'7.9',text:'Taux horaire aspirationnel'}]},
+      {title:'D — BLOCAGES PSYCHOLOGIQUES',questions:[{num:'7.10',text:'Niveau de confiance par domaine'},{num:'7.11',text:'Peur dominante'},{num:'7.12',text:'Croyance limitante la plus coûteuse'},{num:'7.13',text:'Pattern d\'exécution'}]},
+      {title:'E — PILOTAGE & LONG-TERM GAMES',questions:[{num:'7.14',text:'Long-term games (Naval)'},{num:'7.15',text:'Système de pilotage KPIs'}]}
+    ]}
+  };
+  return defs[pid];
+}
+
+function ouvrirPDF(){
+  const client=window._rapportClient;
+  const scores=window._rapportScores||{};
+  const stoppeur=window._rapportStoppeur;
+  const keys=['lecture_froide','scores_interpretation','calculs_economiques','stoppeur_profond','classement_contraintes','plan_sprint','kpis','risques','levier_psychologique','concurrence','action_48h','options_suite'];
+  const r={};
+  keys.forEach(k=>{const el=document.getElementById('edit-'+k);r[k]=el?el.value:(window._rapportData||{})[k]||'';});
+  const dateStr=new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'});
+  const scoresRows=PILIERS_META.map(p=>{const sc=scores[p.id];const c=sc!==undefined?(sc<4?'#C0392B':sc<7?'#E67E22':'#27AE60'):'#888';const isStop=stoppeur&&stoppeur[0]===p.id;return`<tr${isStop?' style="background:#FFF5F5"':''}><td>${isStop?'⚠ ':''}${p.label}</td><td style="text-align:center;font-weight:700;color:${c}">${sc!==undefined?sc.toFixed(1)+'/10':'—'}</td><td style="color:${c}">${sc!==undefined?(sc<4?'Critique':sc<7?'À améliorer':'Bon'):'—'}</td></tr>`;}).join('');
+  const globalScore=Object.values(scores).length?(Object.values(scores).reduce((a,b)=>a+b,0)/Object.values(scores).length).toFixed(1):'—';
+  const sections=[{k:'lecture_froide',t:'0. LECTURE FROIDE DU PROFIL FONDATEUR'},{k:'calculs_economiques',t:'2. CALCULS ÉCONOMIQUES RÉELS'},{k:'stoppeur_profond',t:'3. LE VRAI STOPPEUR — DIAGNOSTIC PROFOND'},{k:'classement_contraintes',t:'4. CLASSEMENT DES CONTRAINTES'},{k:'plan_sprint',t:'5. PLAN SPRINT 30 JOURS'},{k:'kpis',t:'6. TABLEAU DE BORD KPIS'},{k:'risques',t:'7. RISQUES & POINTS DE DÉFAILLANCE'},{k:'levier_psychologique',t:'8. LEVIER PSYCHOLOGIQUE'},{k:'concurrence',t:'ANALYSE CONCURRENTIELLE'},{k:'action_48h',t:'9. ACTION IMMÉDIATE — 48H'},{k:'options_suite',t:'10. OPTIONS DE SUITE'}];
+  const html=`<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"/><title>Diagnostic Séquence Dominante™ — ${h(client?client.nom:'')}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',Arial,sans-serif;background:#fff;color:#1a1a2e;font-size:10.5pt;line-height:1.65}.page{max-width:800px;margin:0 auto;padding:40px}@media print{.page{padding:20px}.no-print{display:none!important}@page{margin:12mm}}.hdr{border-bottom:3px solid #0A1628;padding-bottom:16px;margin-bottom:22px}.brand{font-size:20pt;font-weight:700;color:#0A1628}.brand span{color:#C9A84C}.sub{font-size:9pt;color:#555;font-style:italic;margin-top:4px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;background:#F8F7F4;border:1px solid #E0D9C8;border-radius:8px;padding:14px}.meta-item .l{font-size:9pt;color:#888;text-transform:uppercase;margin-bottom:2px}.meta-item .v{font-size:11pt;font-weight:700}.banner{background:#0A1628;color:#C9A84C;text-align:center;padding:12px;border-radius:8px;margin-bottom:20px;font-size:12pt;font-weight:700}.sec{margin-bottom:24px}.sec-t{background:#0A1628;color:#C9A84C;padding:8px 14px;border-radius:6px 6px 0 0;font-weight:700;font-size:10.5pt}.sec-b{border:1px solid #E0D9C8;border-top:none;border-radius:0 0 6px 6px;padding:14px}.sec-b p{margin-bottom:9px;line-height:1.75}.sec-b p:last-child{margin-bottom:0}table{width:100%;border-collapse:collapse;margin:8px 0}td,th{padding:7px 11px;border-bottom:1px solid #E8E0D0;font-size:10pt}th{background:#0A1628;color:#C9A84C;font-weight:600;text-align:left}tr:nth-child(even) td{background:#F8F7F4}.ftr{border-top:2px solid #E0D9C8;padding-top:12px;margin-top:18px;display:flex;justify-content:space-between;font-size:8.5pt;color:#999}.btn{padding:8px 16px;border-radius:5px;font-size:10pt;font-weight:600;cursor:pointer;border:none;margin-bottom:16px}</style></head><body>
+<div class="page">
+<div class="no-print"><button class="btn" style="background:#0A1628;color:#C9A84C" onclick="window.print()">🖨 Imprimer / PDF</button></div>
+<div class="hdr"><div class="brand">DIAGNOSTIC SÉQUENCE DOMINANTE<span>™</span></div><div class="sub">Intelligence de Séquence Dominante™ · Session 1 · Sprint 30 Jours</div></div>
+<div class="meta"><div class="meta-item"><div class="l">Client</div><div class="v">${h(client?client.nom:'')}</div><div style="font-size:10pt;color:#555">${h(client?client.entreprise||'':'')}</div></div><div class="meta-item"><div class="l">Date</div><div class="v">${dateStr}</div></div><div class="meta-item"><div class="l">Objectif Sprint</div><div class="v" style="color:#C9A84C">${h(client?client.objectif||'—':'—')}</div></div><div class="meta-item"><div class="l">Score Global</div><div class="v">${globalScore}/10</div></div></div>
+${stoppeur?`<div class="banner">⚡ STOPPEUR DE CASH DOMINANT CONFIRMÉ ⚡<br><span style="font-size:10pt;color:#fff">${stoppeur[0]} — ${PILIERS_META.find(p=>p.id===stoppeur[0])?.label||''} : ${stoppeur[1].toFixed(1)}/10</span></div>`:''}
+<div style="background:#F8F7F4;border:1px solid #E0D9C8;border-radius:8px;overflow:hidden;margin-bottom:24px"><div style="background:#0A1628;color:#C9A84C;padding:8px 14px;font-weight:700;display:flex;justify-content:space-between"><span>PROFIL ICP ISD™</span><span style="color:#fff">${window._icpData ? window._icpData.archetype : "---"}</span></div><div style="padding:12px 14px"><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px"><div><div style="font-size:8pt;color:#888">Stoppeur initial</div><div style="font-weight:700;color:#C0392B">${window._icpData ? window._icpData.stoppeur_initial : "---"}</div></div><div><div style="font-size:8pt;color:#888">Robinet prioritaire</div><div style="font-weight:600;color:#C9A84C">${window._icpData ? window._icpData.robinet : "---"}</div></div><div><div style="font-size:8pt;color:#888">Mode de vente</div><div style="font-weight:600">${window._icpData ? window._icpData.q1 : "---"}</div></div></div><div style="font-size:10pt;font-style:italic;background:#fff;padding:8px;border-radius:4px;border-left:3px solid #C9A84C">${window._icpData ? window._icpData.message_miroir : "---"}</div></div></div>
+<div class="sec"><div class="sec-t">SCORES DIAGNOSTIQUES — LES 7 PILIERS</div><div class="sec-b"><table><thead><tr><th>Pilier</th><th>Score</th><th>Interprétation</th></tr></thead><tbody>${scoresRows}</tbody></table></div></div>
+${sections.map(s=>`<div class="sec"><div class="sec-t">${s.t}</div><div class="sec-b">${(r[s.k]||'—').split('\n').filter(Boolean).map(p=>`<p>${p}</p>`).join('')}</div></div>`).join('')}
+<div class="ftr"><div>Diagnostic de Séquence Dominante™ · ${h(client?client.nom:'')} · ${dateStr} · Confidentiel</div><div>Saifeddine El Gharbaoui · Architecte de Clarté Rentable™</div></div>
+</div></body></html>`;
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();}
+}
+
+// ═══════════════════════════════════════════
+// WELCOME & BOOT
+// ═══════════════════════════════════════════
+function renderWelcome(){
+  document.getElementById('content').innerHTML=`
+    <div class="page" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;text-align:center;padding:40px">
+      <div style="font-size:46px;margin-bottom:18px">⬡</div>
+      <h1 style="color:var(--gold);font-size:1.7rem;margin-bottom:10px">Diagnostic Séquence Dominante™</h1>
+      <p style="color:var(--muted);font-size:13px;line-height:1.8;max-width:380px;margin-bottom:24px">7 piliers · 83 questions · Sauvegarde automatique<br>Session de coaching — rempli par l\'Architecte</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:380px;margin-bottom:24px">
+        ${[['🎯','7 Piliers ISD™','83 questions structurées'],['💾','Multi-sessions','Reprise à tout moment'],['📊','Scoring temps réel','Barème par pilier'],['📄','Rapport IA complet','Éditable avant PDF']].map(([i,t,d])=>`<div style="background:var(--dark2);border:1px solid var(--border);border-radius:8px;padding:10px"><div style="font-size:18px;margin-bottom:3px">${i}</div><div style="font-size:12px;font-weight:700">${t}</div><div style="font-size:10px;color:var(--muted)">${d}</div></div>`).join('')}
+      </div>
+      <button class="gold-btn" onclick="showNewClientModal()" style="font-size:14px;padding:11px 24px">+ Créer un nouveau dossier client</button>
+    </div>`;
+}
+
+async function boot(){
+  renderWelcome();
+  await loadClients();
+}
+
+boot();
+</script>
+</body>
+</html>
